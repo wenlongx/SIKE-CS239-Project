@@ -1,0 +1,8 @@
+In this folder we'll put our load testing script. Basically, we create a script that
+    - starts the kafka cluster
+    - creates a producer, consumer instance with the specified Serializer
+    - set consumer to start listening
+    - start timer
+    - producer generates N number of random messages, writes it to a local kafka cluster
+    - stop timer
+
