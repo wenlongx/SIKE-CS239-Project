@@ -17,13 +17,20 @@
 package kafka.examples;
 
 import kafka.utils.ShutdownableThread;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.BinaryDecoder;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.util.Utf8;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,20 +51,34 @@ public class ConsumerTest extends ShutdownableThread {
 //        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.IntegerDeserializer");
 //        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "io.confluent.kafka.serializers.KafkaAvroDeserializer");
-        props.put("schema.registry.url", "http://localhost:8081");
+//        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "io.confluent.kafka.serializers.KafkaAvroDeserializer");
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+//        props.put("schema.registry.url", "http://localhost:8081");
 
-        consumer = new KafkaConsumer<String, String>(props);
+        consumer = new KafkaConsumer<String, byte []>(props);
         this.topic = topic;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void doWork() {
+        String userSchema = "{\"type\":\"record\"," +
+                "\"name\":\"myrecord\"," +
+                "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
+        Schema.Parser parser = new Schema.Parser();
+        Schema schema = parser.parse(userSchema);
+
+        DatumReader<GenericRecord> datumReader = new GenericDatumReader<>(schema);
         consumer.subscribe(Collections.singletonList(this.topic));
-        ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(1));
-        for (ConsumerRecord<String, String> record : records) {
-            System.out.println("Received message: (" + record.key() + ", " + record.value() + ") at offset " + record.offset());
+        ConsumerRecords<String, byte []> records = consumer.poll(Duration.ofSeconds(1));
+        for (ConsumerRecord<String, byte []> record : records) {
+            BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(record.value(), null);
+            try {
+                GenericRecord genRecord = datumReader.read(null, decoder);
+                System.out.println("Received message: (" + record.key() + ", " + genRecord.get("f1").toString() + ") at offset " + record.offset());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

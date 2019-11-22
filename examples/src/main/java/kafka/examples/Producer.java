@@ -19,17 +19,24 @@ package kafka.examples;
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
 
+import org.apache.avro.io.BinaryEncoder;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.io.EncoderFactory;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Properties;
 
 public class Producer extends Thread {
@@ -42,11 +49,12 @@ public class Producer extends Thread {
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaProperties.KAFKA_SERVER_URL + ":" + KafkaProperties.KAFKA_SERVER_PORT);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "DemoProducer");
 
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class.getName());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        props.put("schema.registry.url", "http://localhost:8081");
+//        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class.getName());
+//        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+//        props.put("schema.registry.url", "http://localhost:8081");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, io.confluent.kafka.serializers.KafkaAvroSerializer.class);
+//        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, io.confluent.kafka.serializers.KafkaAvroSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         producer = new KafkaProducer<>(props);
         this.topic = topic;
         this.isAsync = isAsync;
@@ -64,8 +72,20 @@ public class Producer extends Thread {
         Schema schema = parser.parse(userSchema);
         GenericRecord avroRecord = new GenericData.Record(schema);
         avroRecord.put("f1", "value1");
-        ProducerRecord<Object, Object> record = new ProducerRecord<>(this.topic, key, avroRecord);
 
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        BinaryEncoder encoder = null;
+        encoder = EncoderFactory.get().binaryEncoder(stream, encoder);
+
+        DatumWriter<GenericRecord> datumWriter = new GenericDatumWriter<>(schema);
+        try {
+            datumWriter.write(avroRecord, encoder);
+            encoder.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        ProducerRecord<Object, Object> record = new ProducerRecord<>(this.topic, key, stream.toByteArray());
         System.out.println("Started to run the program");
         try {
             for (int i = 0; i < 100; i++) {
