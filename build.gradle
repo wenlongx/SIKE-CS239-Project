@@ -21,9 +21,8 @@ buildscript {
   repositories {
     mavenCentral()
     jcenter()
-    maven {
-      url "https://plugins.gradle.org/m2/"
-    }
+    maven { url "https://plugins.gradle.org/m2/" }
+    maven { url "http://packages.confluent.io/maven/" }
   }
   apply from: file('gradle/buildscript.gradle'), to: buildscript
   apply from: "$rootDir/gradle/dependencies.gradle"
@@ -37,6 +36,10 @@ buildscript {
     classpath "org.owasp:dependency-check-gradle:$versions.owaspDepCheckPlugin"
     classpath "com.diffplug.spotless:spotless-plugin-gradle:$versions.spotlessPlugin"
     classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:$versions.spotbugsPlugin"
+    classpath "com.google.protobuf:protobuf-gradle-plugin:0.8.10"
+    classpath "io.confluent:kafka-avro-serializer:5.3.0"
+    classpath "io.confluent:kafka-schema-registry:5.3.0"
+    classpath "org.apache.avro:avro:1.1.0"
   }
 }
 
@@ -893,9 +896,18 @@ project(':core') {
 
 project(':examples') {
   archivesBaseName = "kafka-examples"
+  repositories {
+    mavenCentral()
+    jcenter()
+    maven { url "https://plugins.gradle.org/m2/" }
+    maven { url "http://packages.confluent.io/maven/" }
+  }
 
   dependencies {
     compile project(':core')
+    implementation "io.confluent:kafka-avro-serializer:5.3.0"
+    implementation "io.confluent:kafka-schema-registry:5.3.0"
+    implementation "org.apache.avro:avro:1.1.0"
   }
 
   javadoc {

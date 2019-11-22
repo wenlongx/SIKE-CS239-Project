@@ -16,19 +16,23 @@
  */
 package kafka.examples;
 
+import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericRecord;
+
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.IntegerSerializer;
+import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 
 public class Producer extends Thread {
-    private final KafkaProducer<Integer, String> producer;
+    private final KafkaProducer<Object, Object> producer;
     private final String topic;
     private final Boolean isAsync;
 
@@ -36,34 +40,69 @@ public class Producer extends Thread {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaProperties.KAFKA_SERVER_URL + ":" + KafkaProperties.KAFKA_SERVER_PORT);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "DemoProducer");
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class.getName());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+//        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class.getName());
+//        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        props.put("schema.registry.url", "http://localhost:8081");
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, io.confluent.kafka.serializers.KafkaAvroSerializer.class);
         producer = new KafkaProducer<>(props);
         this.topic = topic;
         this.isAsync = isAsync;
+
+        System.out.println("Created the producer");
     }
 
     public void run() {
-        int messageNo = 1;
-        while (true) {
-            String messageStr = "Message_" + messageNo;
-            long startTime = System.currentTimeMillis();
-            if (isAsync) { // Send asynchronously
-                producer.send(new ProducerRecord<>(topic,
-                    messageNo,
-                    messageStr), new DemoCallBack(startTime, messageNo, messageStr));
-            } else { // Send synchronously
-                try {
-                    producer.send(new ProducerRecord<>(topic,
-                        messageNo,
-                        messageStr)).get();
-                    System.out.println("Sent message: (" + messageNo + ", " + messageStr + ")");
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                }
+
+        String key = "key1";
+        String userSchema = "{\"type\":\"record\"," +
+                "\"name\":\"myrecord\"," +
+                "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
+        Schema.Parser parser = new Schema.Parser();
+        Schema schema = parser.parse(userSchema);
+        GenericRecord avroRecord = new GenericData.Record(schema);
+        avroRecord.put("f1", "value1");
+        ProducerRecord<Object, Object> record = new ProducerRecord<>(this.topic, key, avroRecord);
+
+        System.out.println("Started to run the program");
+        try {
+            for (int i = 0; i < 100; i++) {
+                producer.send(record);
+                System.out.println("Sending data" + i);
             }
-            ++messageNo;
+        } catch (SerializationException e) {
+            // may need to do something with it
+            System.out.println("Caught an exception");
         }
+// When you're finished producing records, you can flush the producer to ensure it has all been written to Kafka and
+// then close the producer to free its resources.
+        finally {
+            System.out.println("CLosing the producer");
+            producer.flush();
+            producer.close();
+        }
+
+//        for (int i = 0; i < 1000; i++){
+////            String messageStr = "Message_" + messageNo;
+//            long startTime = System.currentTimeMillis();
+//            if (isAsync) { // Send asynchronously
+//                producer.send(new ProducerRecord<>(topic,
+//                    messageNo,
+//                        avroRecord));
+////                , new DemoCallBack(startTime, messageNo, avroRecord));
+//            } else { // Send synchronously
+//                try {
+//                    producer.send(new ProducerRecord<>(topic,
+//                        messageNo,
+//                            avroRecord)).get();
+//                    System.out.println("Sent message: (" + messageNo);
+//                } catch (InterruptedException | ExecutionException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            ++messageNo;
+//        }
     }
 }
 
@@ -92,9 +131,9 @@ class DemoCallBack implements Callback {
         long elapsedTime = System.currentTimeMillis() - startTime;
         if (metadata != null) {
             System.out.println(
-                "message(" + key + ", " + message + ") sent to partition(" + metadata.partition() +
-                    "), " +
-                    "offset(" + metadata.offset() + ") in " + elapsedTime + " ms");
+                    "message(" + key + ", " + message + ") sent to partition(" + metadata.partition() +
+                            "), " +
+                            "offset(" + metadata.offset() + ") in " + elapsedTime + " ms");
         } else {
             exception.printStackTrace();
         }
