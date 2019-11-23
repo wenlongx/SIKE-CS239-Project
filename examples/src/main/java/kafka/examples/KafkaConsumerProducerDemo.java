@@ -21,7 +21,7 @@ import org.apache.kafka.common.serialization.Serializer;
 import java.util.Scanner;
 
 public class KafkaConsumerProducerDemo {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         boolean isAsync = false;
         Producer producerThread = null;
         ConsumerTest consumerThread = null;
@@ -37,7 +37,7 @@ public class KafkaConsumerProducerDemo {
         String modeResp = scanner.nextLine();
         SerializerType currSerializer = null;
 
-        switch (modeResp.toLowerCase()){
+        switch (modeResp.toLowerCase()) {
             case "p":
                 currSerializer = SerializerType.PB;
                 break;
@@ -48,7 +48,7 @@ public class KafkaConsumerProducerDemo {
                 currSerializer = SerializerType.DEFAULT;
                 break;
             default:
-                System.out.println("Invalid mdoe entered, exiting program now ...");
+                System.out.println("Invalid mode entered, exiting program now ...");
                 return;
         }
         producerThread = new Producer(KafkaProperties.TOPIC, isAsync, currSerializer);
@@ -57,5 +57,8 @@ public class KafkaConsumerProducerDemo {
         // Start the producer thread first and then the consumer thread
         producerThread.start();
         consumerThread.start();
+
+//        producerThread.join();
+//        consumerThread.shutdown();
     }
 }

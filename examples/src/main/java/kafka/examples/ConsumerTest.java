@@ -16,6 +16,8 @@
  */
 package kafka.examples;
 
+import kafka.protobuf_serde.CustomProtobufDeserializer;
+import kafka.protobuf_serde.generated.PbClasses;
 import kafka.utils.ShutdownableThread;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
@@ -28,7 +30,11 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.errors.WakeupException;
+import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -36,7 +42,7 @@ import java.util.Collections;
 import java.util.Properties;
 
 public class ConsumerTest extends ShutdownableThread {
-    final Consumer consumer;
+    private final Consumer consumer;
     private final String topic;
 
     public ConsumerTest(String topic, SerializerType serializerType) {
@@ -46,48 +52,56 @@ public class ConsumerTest extends ShutdownableThread {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "DemoConsumer");
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
         props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
+
+        // TODO: Check what this one actually does. I am a bit dubious about it -- Sahil
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
-//        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.IntegerDeserializer");
-//        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+
+        // Key will always be an int
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, IntegerDeserializer.class.getName());
+
+        switch (serializerType) {
+            case DEFAULT:
+                props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+                break;
+            case PB:
+                props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomProtobufDeserializer.class.getName());
+                break;
+        }
+
 //        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "io.confluent.kafka.serializers.KafkaAvroDeserializer");
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+//        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 //        props.put("schema.registry.url", "http://localhost:8081");
 
-        consumer = new KafkaConsumer<String, byte []>(props);
+        consumer = new KafkaConsumer<>(props);
         this.topic = topic;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void doWork() {
-        String userSchema = "{\"type\":\"record\"," +
-                "\"name\":\"myrecord\"," +
-                "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
-        Schema.Parser parser = new Schema.Parser();
-        Schema schema = parser.parse(userSchema);
+//        String userSchema = "{\"type\":\"record\"," +
+//                "\"name\":\"myrecord\"," +
+//                "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
+//        Schema.Parser parser = new Schema.Parser();
+//        Schema schema = parser.parse(userSchema);
+//
+//        DatumReader<GenericRecord> datumReader = new GenericDatumReader<>(schema);
 
-        DatumReader<GenericRecord> datumReader = new GenericDatumReader<>(schema);
-        consumer.subscribe(Collections.singletonList(this.topic));
-        ConsumerRecords<String, byte []> records = consumer.poll(Duration.ofSeconds(1));
-        for (ConsumerRecord<String, byte []> record : records) {
-            BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(record.value(), null);
-            try {
-                GenericRecord genRecord = datumReader.read(null, decoder);
-                System.out.println("Received message: (" + record.key() + ", " + genRecord.get("f1").toString() + ") at offset " + record.offset());
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            consumer.subscribe(Collections.singletonList(this.topic));
+            ConsumerRecords<Integer, PbClasses.SearchRequest> records = consumer.poll(Duration.ofSeconds(1));
+            for (ConsumerRecord<Integer, PbClasses.SearchRequest> record : records) {
+//                BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(record.value(), null);
+                //                    GenericRecord genRecord = datumReader.read(null, decoder);
+                System.out.println("Received message: (" + record.key() + ", " + record.value().toString() + ") at offset " + record.offset());
             }
+        } catch (WakeupException e) {
+            // Ignore for shutdown
+        } catch (SerializationException s) {
+            System.out.println("Caught a deserialization exception");
+        } finally {
+            // Shutdown the consumer
+            System.out.println("Closing the consumer as well ...");
         }
-    }
-
-    @Override
-    public String name() {
-        return null;
-    }
-
-    @Override
-    public boolean isInterruptible() {
-        return false;
     }
 }

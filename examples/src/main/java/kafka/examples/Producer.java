@@ -16,7 +16,10 @@
  */
 package kafka.examples;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
+import kafka.protobuf_serde.CustomProtobufSerializer;
+import kafka.protobuf_serde.generated.PbClasses;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumWriter;
@@ -34,13 +37,14 @@ import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import scala.Int;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Properties;
 
 public class Producer extends Thread {
-    private final KafkaProducer<Object, Object> producer;
+    private final KafkaProducer<Integer, PbClasses.SearchRequest> producer;
     private final String topic;
     private final Boolean isAsync;
 
@@ -49,12 +53,20 @@ public class Producer extends Thread {
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaProperties.KAFKA_SERVER_URL + ":" + KafkaProperties.KAFKA_SERVER_PORT);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "DemoProducer");
 
-//        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class.getName());
-//        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-//        props.put("schema.registry.url", "http://localhost:8081");
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        // The key will always be a int as the key is the partition name
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class.getName());
+
+        switch (serializerType) {
+            case PB:
+                props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, CustomProtobufSerializer.class.getName());
+                break;
+            case DEFAULT:
+                props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+                break;
+        }
+
 //        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, io.confluent.kafka.serializers.KafkaAvroSerializer.class);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
+//        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         producer = new KafkaProducer<>(props);
         this.topic = topic;
         this.isAsync = isAsync;
@@ -64,42 +76,51 @@ public class Producer extends Thread {
 
     public void run() {
 
-        String key = "key1";
-        String userSchema = "{\"type\":\"record\"," +
-                "\"name\":\"myrecord\"," +
-                "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
-        Schema.Parser parser = new Schema.Parser();
-        Schema schema = parser.parse(userSchema);
-        GenericRecord avroRecord = new GenericData.Record(schema);
-        avroRecord.put("f1", "value1");
+//        String key = "key1";
+//        String userSchema = "{\"type\":\"record\"," +
+//                "\"name\":\"myrecord\"," +
+//                "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
+//        Schema.Parser parser = new Schema.Parser();
+//        Schema schema = parser.parse(userSchema);
+//        GenericRecord avroRecord = new GenericData.Record(schema);
+//        avroRecord.put("f1", "value1");
+//
+//        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+//        BinaryEncoder encoder = null;
+//        encoder = EncoderFactory.get().binaryEncoder(stream, encoder);
+//
+//        DatumWriter<GenericRecord> datumWriter = new GenericDatumWriter<>(schema);
+//        try {
+//            datumWriter.write(avroRecord, encoder);
+//            encoder.flush();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        BinaryEncoder encoder = null;
-        encoder = EncoderFactory.get().binaryEncoder(stream, encoder);
+//        ProducerRecord<Object, Object> record = new ProducerRecord<>(this.topic, key, stream.toByteArray());
+        System.out.println("Started to run the program");
 
-        DatumWriter<GenericRecord> datumWriter = new GenericDatumWriter<>(schema);
+        PbClasses.SearchRequest sr = PbClasses.SearchRequest.newBuilder().setPageNumber(12321).build();
+
         try {
-            datumWriter.write(avroRecord, encoder);
-            encoder.flush();
-        } catch (IOException e) {
+            PbClasses.SearchRequest sr2 = PbClasses.SearchRequest.parseFrom(sr.toByteArray());
+            System.out.println("The page number is " + sr2.getPageNumber());
+        } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
         }
 
-        ProducerRecord<Object, Object> record = new ProducerRecord<>(this.topic, key, stream.toByteArray());
-        System.out.println("Started to run the program");
         try {
             for (int i = 0; i < 100; i++) {
-                producer.send(record);
+                producer.send(new ProducerRecord<>(this.topic, 5, sr));
                 System.out.println("Sending data" + i);
             }
         } catch (SerializationException e) {
             // may need to do something with it
-            System.out.println("Caught an exception");
-        }
-// When you're finished producing records, you can flush the producer to ensure it has all been written to Kafka and
+            System.out.println("Caught a serialization exception");
+        } finally {
+//            When you're finished producing records, you can flush the producer to ensure it has all been written to Kafka and
 // then close the producer to free its resources.
-        finally {
-            System.out.println("CLosing the producer");
+            System.out.println("Closing the producer");
             producer.flush();
             producer.close();
         }

@@ -7,10 +7,13 @@ package kafka.protobuf_serde;
 import kafka.protobuf_serde.generated.PbClasses;
 import org.apache.kafka.common.serialization.Serializer;
 
-public class CustomProtobufSerializer implements Serializer<Object> {
+public class CustomProtobufSerializer implements Serializer<PbClasses.SearchRequest> {
 
     @Override
-    public byte[] serialize(String topic, Object o) {
-        return ((PbClasses.SearchRequest) o).toByteArray();
+    public byte[] serialize(String topic, PbClasses.SearchRequest pbc) {
+//        if (o instanceof PbClasses.SearchRequest){
+//
+//        }
+        return pbc.toByteArray();
     }
 }

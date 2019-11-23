@@ -10,16 +10,16 @@ import kafka.protobuf_serde.generated.PbClasses;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
 
-public class CustomProtobufDeserializer implements Deserializer<Object> {
+public class CustomProtobufDeserializer implements Deserializer<PbClasses.SearchRequest> {
 
-    public Object deserialize(String topic, byte[] data){
+    public PbClasses.SearchRequest deserialize(String topic, byte[] data){
         if (data == null){
             return null;
         }
-
         try {
-            return PbClasses.SearchRequest.parseFrom(data);
+            return PbClasses.SearchRequest.parser().parseFrom(data);
         } catch (InvalidProtocolBufferException e) {
+            e.printStackTrace();
             throw new SerializationException("Could not parse Protobuf Object");
         }
     }
