@@ -44,7 +44,7 @@ public class Producer extends Thread {
     private final String topic;
     private final Boolean isAsync;
 
-    public Producer(String topic, Boolean isAsync) {
+    public Producer(String topic, Boolean isAsync, SerializerType serializerType) {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaProperties.KAFKA_SERVER_URL + ":" + KafkaProperties.KAFKA_SERVER_PORT);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "DemoProducer");

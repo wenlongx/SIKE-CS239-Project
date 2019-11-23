@@ -16,13 +16,46 @@
  */
 package kafka.examples;
 
+import org.apache.kafka.common.serialization.Serializer;
+
+import java.util.Scanner;
+
 public class KafkaConsumerProducerDemo {
     public static void main(String[] args) {
-        boolean isAsync = args.length == 0 || !args[0].trim().equalsIgnoreCase("sync");
-        Producer producerThread = new Producer(KafkaProperties.TOPIC, isAsync);
-        producerThread.start();
+        boolean isAsync = false;
+        Producer producerThread = null;
+        ConsumerTest consumerThread = null;
 
-        ConsumerTest consumerThread = new ConsumerTest(KafkaProperties.TOPIC);
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Do you wish to send the data in an async manner? (y/n)");
+        String asyncResp = scanner.nextLine();
+        if (asyncResp.toLowerCase().equals("y")) {
+            isAsync = true;
+        }
+
+        System.out.println("Enter the mode you wish to run, Protobuf (p), Avro (a), default (d): ");
+        String modeResp = scanner.nextLine();
+        SerializerType currSerializer = null;
+
+        switch (modeResp.toLowerCase()){
+            case "p":
+                currSerializer = SerializerType.PB;
+                break;
+            case "a":
+                currSerializer = SerializerType.AVRO;
+                break;
+            case "d":
+                currSerializer = SerializerType.DEFAULT;
+                break;
+            default:
+                System.out.println("Invalid mdoe entered, exiting program now ...");
+                return;
+        }
+        producerThread = new Producer(KafkaProperties.TOPIC, isAsync, currSerializer);
+        consumerThread = new ConsumerTest(KafkaProperties.TOPIC, currSerializer);
+
+        // Start the producer thread first and then the consumer thread
+        producerThread.start();
         consumerThread.start();
     }
 }

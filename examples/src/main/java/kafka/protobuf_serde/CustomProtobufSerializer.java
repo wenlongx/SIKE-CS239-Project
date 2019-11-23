@@ -4,14 +4,13 @@
 
 package kafka.protobuf_serde;
 
-import kafka.protobuf_serde.generated.Init;
+import kafka.protobuf_serde.generated.PbClasses;
+import org.apache.kafka.common.serialization.Serializer;
 
-public class CustomProtobufSerializer {
+public class CustomProtobufSerializer implements Serializer<Object> {
 
-    public static void main(String[] args) {
-        System.out.println("hello there");
-        Init.SearchRequest sq = Init.SearchRequest.newBuilder().setQuery("hihi").setPageNumber(12312).build();
-
-        System.out.println(sq.getPageNumber());
+    @Override
+    public byte[] serialize(String topic, Object o) {
+        return ((PbClasses.SearchRequest) o).toByteArray();
     }
 }
