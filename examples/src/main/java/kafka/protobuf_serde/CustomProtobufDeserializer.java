@@ -17,7 +17,7 @@ public class CustomProtobufDeserializer implements Deserializer<PbClasses.Search
             return null;
         }
         try {
-            return PbClasses.SearchRequest.parser().parseFrom(data);
+            return PbClasses.SearchRequest.parseFrom(data);
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
             throw new SerializationException("Could not parse Protobuf Object");
