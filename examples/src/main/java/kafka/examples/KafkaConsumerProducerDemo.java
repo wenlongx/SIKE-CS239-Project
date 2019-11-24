@@ -16,15 +16,13 @@
  */
 package kafka.examples;
 
-import org.apache.kafka.common.serialization.Serializer;
-
 import java.util.Scanner;
 
 public class KafkaConsumerProducerDemo {
     public static void main(String[] args) throws InterruptedException {
         boolean isAsync = false;
-        Producer producerThread = null;
-        ConsumerTest consumerThread = null;
+        ProducerThread producerThread = null;
+        ConsumerThread consumerThread = null;
 
         Scanner scanner = new Scanner(System.in);
         System.out.println("Do you wish to send the data in an async manner? (y/n)");
@@ -51,8 +49,8 @@ public class KafkaConsumerProducerDemo {
                 System.out.println("Invalid mode entered, exiting program now ...");
                 return;
         }
-        producerThread = new Producer(KafkaProperties.TOPIC, isAsync, currSerializer);
-        consumerThread = new ConsumerTest(KafkaProperties.TOPIC, currSerializer);
+        producerThread = new ProducerThread(KafkaProperties.TOPIC, isAsync, currSerializer);
+        consumerThread = new ConsumerThread(KafkaProperties.TOPIC, currSerializer);
 
         // Start the producer thread first and then the consumer thread
         producerThread.start();

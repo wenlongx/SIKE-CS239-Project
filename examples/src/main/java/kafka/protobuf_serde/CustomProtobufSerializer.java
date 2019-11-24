@@ -4,16 +4,13 @@
 
 package kafka.protobuf_serde;
 
-import kafka.protobuf_serde.generated.PbClasses;
+import com.google.protobuf.MessageLite;
 import org.apache.kafka.common.serialization.Serializer;
 
-public class CustomProtobufSerializer implements Serializer<PbClasses.SearchRequest> {
+public class CustomProtobufSerializer<T extends MessageLite> implements Serializer<T> {
 
     @Override
-    public byte[] serialize(String topic, PbClasses.SearchRequest pbc) {
-//        if (o instanceof PbClasses.SearchRequest){
-//
-//        }
-        return pbc.toByteArray();
+    public byte[] serialize(String topic, T data) {
+        return data.toByteArray();
     }
 }

@@ -16,6 +16,7 @@
  */
 package kafka.examples;
 
+import com.google.protobuf.MessageLite;
 import kafka.protobuf_serde.CustomProtobufDeserializer;
 import kafka.protobuf_serde.generated.PbClasses;
 import kafka.utils.ShutdownableThread;
@@ -32,6 +33,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
+import org.apache.kafka.common.protocol.Message;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -41,11 +43,12 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
 
-public class ConsumerTest extends ShutdownableThread {
-    private final Consumer consumer;
+public class ConsumerThread extends ShutdownableThread {
+    private Consumer consumer;
     private final String topic;
+    private final SerializerType serializerType;
 
-    public ConsumerTest(String topic, SerializerType serializerType) {
+    public ConsumerThread(String topic, SerializerType serializerType) {
         super("KafkaConsumerExample", false);
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaProperties.KAFKA_SERVER_URL + ":" + KafkaProperties.KAFKA_SERVER_PORT);
@@ -56,24 +59,23 @@ public class ConsumerTest extends ShutdownableThread {
         // TODO: Check what this one actually does. I am a bit dubious about it -- Sahil
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
 
-        // Key will always be an int
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, IntegerDeserializer.class.getName());
-
         switch (serializerType) {
-            case DEFAULT:
-                props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+            case AVRO:
+                // TODO: Init the custom avro deserializer
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new StringDeserializer());
                 break;
             case PB:
-                props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomProtobufDeserializer.class.getName());
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomProtobufDeserializer<>(PbClasses.SearchRequest.parser()));
+                break;
+            case DEFAULT:
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new StringDeserializer());
                 break;
         }
 
-//        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "io.confluent.kafka.serializers.KafkaAvroDeserializer");
 //        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-//        props.put("schema.registry.url", "http://localhost:8081");
 
-        consumer = new KafkaConsumer<>(props);
         this.topic = topic;
+        this.serializerType = serializerType;
     }
 
     @Override
@@ -84,16 +86,22 @@ public class ConsumerTest extends ShutdownableThread {
 //                "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
 //        Schema.Parser parser = new Schema.Parser();
 //        Schema schema = parser.parse(userSchema);
-//
-//        DatumReader<GenericRecord> datumReader = new GenericDatumReader<>(schema);
 
         try {
             consumer.subscribe(Collections.singletonList(this.topic));
-            ConsumerRecords<Integer, PbClasses.SearchRequest> records = consumer.poll(Duration.ofSeconds(1));
-            for (ConsumerRecord<Integer, PbClasses.SearchRequest> record : records) {
-//                BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(record.value(), null);
-                //                    GenericRecord genRecord = datumReader.read(null, decoder);
-                System.out.println("Received message: (" + record.key() + ", " + record.value().toString() + ") at offset " + record.offset());
+
+            // TODO: This is an ugly switch statement, perhaps there is something better? -- Sahil
+            switch (this.serializerType){
+                case PB:
+                    ConsumerRecords<Integer, MessageLite> records = consumer.poll(Duration.ofSeconds(1));
+                    for (ConsumerRecord<Integer, MessageLite> record : records) {
+                        System.out.println("Received message: (" + record.key() + ", " + record.value().toString() + ") at offset " + record.offset());
+                    }
+                    break;
+                case AVRO:
+                    break;
+                case DEFAULT:
+                    break;
             }
         } catch (WakeupException e) {
             // Ignore for shutdown
