@@ -17,14 +17,25 @@
 
 package kafka.examples;
 
+import kafka.Utilities;
+import kafka.avro_serde.CustomAvroSerializer;
 import kafka.protobuf_serde.CustomProtobufSerializer;
 import kafka.protobuf_serde.generated.PbClasses;
 
+import org.apache.avro.Schema;
+import org.apache.avro.SchemaBuilder;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 public class ProducerThread extends Thread {
@@ -41,7 +52,7 @@ public class ProducerThread extends Thread {
         switch (serializerType) {
             case AVRO:
                 // TODO: Init the cusom avro serializer
-                producer = new KafkaProducer<>(props, new IntegerSerializer(), new StringSerializer());
+                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomAvroSerializer(Utilities.searchRequestSchema));
                 break;
             case PB:
                 producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomProtobufSerializer<>());
@@ -73,22 +84,34 @@ public class ProducerThread extends Thread {
         System.out.println("Started to run the producer ...");
 
         try {
+            //10MB character query
+            BufferedReader br = Files.newBufferedReader(Paths.get("./examples/src/main/java/kafka/examples/query.txt"), StandardCharsets.UTF_8);
+            String query = br.readLine();
             switch (this.serializerType){
                 case PB:
-                    PbClasses.SearchRequest sr = PbClasses.SearchRequest.newBuilder().setPageNumber(12321).build();
-                    for (int i = 0; i < 100; i++) {
+                    PbClasses.SearchRequest sr = PbClasses.SearchRequest.newBuilder().setQuery(query).setPageNumber(12321).build();
+                    System.out.println("GIVEN PB SERIALIZED SIZE: " + sr.getSerializedSize());
+
+                    for (int i = 0; i < 1000; i++) {
                         long startTime = System.currentTimeMillis();
                         producer.send(new ProducerRecord<>(this.topic, 5, sr), new DemoCallBack(startTime, i));
                     }
                     break;
                 case AVRO:
+                    GenericRecord record = new GenericData.Record(Utilities.searchRequestSchema);
+                    record.put("query", query);
+                    record.put("page_number", 12321);
+                    for (int i = 0; i < 1000; i++) {
+                        long startTime = System.currentTimeMillis();
+                        producer.send(new ProducerRecord<>(this.topic, 10, record), new DemoCallBack(startTime, i));
+                    }
                     break;
                 case DEFAULT:
                     break;
             }
 
-        } catch (SerializationException e) {
-            System.out.println("Caught a serialization exception");
+        } catch (SerializationException | IOException e) {
+            System.out.println(e);
         } finally {
 //            When you're finished producing records, you can flush the producer to ensure it has all been written to
 //            Kafka and then close the producer to free its resources.

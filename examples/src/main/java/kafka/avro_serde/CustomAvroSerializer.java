@@ -4,6 +4,7 @@
 
 package kafka.avro_serde;
 
+import kafka.Utilities;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
@@ -30,6 +31,7 @@ public class CustomAvroSerializer implements Serializer<GenericRecord> {
 
     @Override
     public byte[] serialize(String topic, GenericRecord data) {
+        long startTime = System.nanoTime();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         BinaryEncoder encoder = null;
         encoder = EncoderFactory.get().binaryEncoder(stream, null);
@@ -40,6 +42,11 @@ public class CustomAvroSerializer implements Serializer<GenericRecord> {
             e.printStackTrace();
         }
 
-        return stream.toByteArray();
+        byte[] arr  = stream.toByteArray();
+
+        long endTime = System.nanoTime();
+        Utilities.appendToFile("avro_ser.txt", (endTime - startTime) + "\n");
+
+        return arr;
     }
 }

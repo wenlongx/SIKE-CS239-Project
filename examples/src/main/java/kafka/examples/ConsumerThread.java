@@ -17,10 +17,13 @@
 package kafka.examples;
 
 import com.google.protobuf.MessageLite;
+import kafka.Utilities;
+import kafka.avro_serde.CustomAvroDeserializer;
 import kafka.protobuf_serde.CustomProtobufDeserializer;
 import kafka.protobuf_serde.generated.PbClasses;
 import kafka.utils.ShutdownableThread;
 import org.apache.avro.Schema;
+import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.BinaryDecoder;
@@ -31,6 +34,8 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.Metric;
+import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.protocol.Message;
@@ -41,6 +46,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
 
 public class ConsumerThread extends ShutdownableThread {
@@ -62,7 +68,7 @@ public class ConsumerThread extends ShutdownableThread {
         switch (serializerType) {
             case AVRO:
                 // TODO: Init the custom avro deserializer
-                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new StringDeserializer());
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomAvroDeserializer(Utilities.searchRequestSchema));
                 break;
             case PB:
                 consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomProtobufDeserializer<>(PbClasses.SearchRequest.parser()));
@@ -89,18 +95,40 @@ public class ConsumerThread extends ShutdownableThread {
 
         try {
             consumer.subscribe(Collections.singletonList(this.topic));
+            Map<MetricName, Metric> metricMap = null;
 
             // TODO: This is an ugly switch statement, perhaps there is something better? -- Sahil
             switch (this.serializerType){
                 case PB:
                     ConsumerRecords<Integer, MessageLite> records = consumer.poll(Duration.ofSeconds(1));
                     for (ConsumerRecord<Integer, MessageLite> record : records) {
-                        System.out.println("Received message: (" + record.key() + ", " + record.value().toString() + ") at offset " + record.offset());
+                        System.out.println("===========Received message: (" + record.key() + ") at offset " + record.offset() + "===========");
+                        metricMap = consumer.metrics();
+                        for( MetricName m_name : metricMap.keySet()){
+                            Metric m = metricMap.get(m_name);
+                            System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
+                        }
                     }
+
                     break;
                 case AVRO:
+                    ConsumerRecords<Integer, GenericRecord> avro_records = consumer.poll(Duration.ofSeconds(1));
+                    for(ConsumerRecord<Integer, GenericRecord> avro_r : avro_records){
+                        System.out.println("=========== RECVD MESSAGE: (" + avro_r.key() + ") at offset " + avro_r.offset() + "============");
+                        metricMap = consumer.metrics();
+                        for( MetricName m_name : metricMap.keySet()){
+                            Metric m = metricMap.get(m_name);
+                            System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
+                        }
+                    }
+
                     break;
                 case DEFAULT:
+                    metricMap = consumer.metrics();
+                    for( MetricName m_name : metricMap.keySet()){
+                        Metric m = metricMap.get(m_name);
+                        System.out.println(m_name.toString());
+                    }
                     break;
             }
         } catch (WakeupException e) {

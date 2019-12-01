@@ -8,8 +8,11 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
 
+import kafka.Utilities;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
+
+import java.io.*;
 
 public class CustomProtobufDeserializer<T extends MessageLite> implements Deserializer<T> {
 
@@ -30,7 +33,11 @@ public class CustomProtobufDeserializer<T extends MessageLite> implements Deseri
             return null;
         }
         try {
-            return parser.parseFrom(data);
+            long startTime = System.nanoTime();
+            T ret = parser.parseFrom(data);
+            long endTime = System.nanoTime();
+            Utilities.appendToFile("proto_de.txt", "" + (endTime - startTime) + "\n");
+            return ret;
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
             throw new SerializationException("Could not parse Protobuf Object");

@@ -4,6 +4,7 @@
 
 package kafka.avro_serde;
 
+import kafka.Utilities;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
@@ -30,13 +31,18 @@ public class CustomAvroDeserializer implements Deserializer<GenericRecord> {
 
     @Override
     public GenericRecord deserialize(String topic, byte[] data){
+        long startTime = System.nanoTime();
         BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(data, null);
 
         try {
-            return this.datumReader.read(null, decoder);
+            GenericRecord r = this.datumReader.read(null, decoder);
+            long endTime = System.nanoTime();
+            Utilities.appendToFile("avro_de.txt", (endTime - startTime) + " \n");
+            return r;
         } catch (IOException e) {
             e.printStackTrace();
             throw new SerializationException("Could not parse AVRO Object");
         }
+
     }
 }
