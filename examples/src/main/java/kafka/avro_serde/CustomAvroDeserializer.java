@@ -16,9 +16,13 @@ import org.apache.kafka.common.serialization.Deserializer;
 
 import java.io.IOException;
 
+import static kafka.Utilities.BUFFER_SIZE;
+
 public class CustomAvroDeserializer implements Deserializer<GenericRecord> {
 
     private final DatumReader<GenericRecord> datumReader;
+    private final long [] serializedTimes;
+    private int currCount;
 
     /**
      * Returns a new instance of {@link CustomAvroDeserializer}
@@ -26,7 +30,9 @@ public class CustomAvroDeserializer implements Deserializer<GenericRecord> {
      * @param schema The AVRO {@link Schema}
      */
     public CustomAvroDeserializer(Schema schema) {
-        datumReader = new GenericDatumReader<>(schema);
+        this.datumReader = new GenericDatumReader<>(schema);
+        this.serializedTimes = new long [BUFFER_SIZE];
+        this.currCount = 0;
     }
 
     @Override
@@ -37,7 +43,14 @@ public class CustomAvroDeserializer implements Deserializer<GenericRecord> {
         try {
             GenericRecord r = this.datumReader.read(null, decoder);
             long endTime = System.nanoTime();
-            Utilities.appendToFile("avro_de.txt", (endTime - startTime) + " \n");
+            this.serializedTimes[this.currCount] = endTime - startTime;
+            this.currCount++;
+
+            if (this.currCount == BUFFER_SIZE){
+                Utilities.appendToFile("avro_de.txt", this.serializedTimes);
+                this.currCount = 0;
+            }
+
             return r;
         } catch (IOException e) {
             e.printStackTrace();

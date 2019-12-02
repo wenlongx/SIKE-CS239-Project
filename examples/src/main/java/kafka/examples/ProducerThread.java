@@ -17,19 +17,15 @@
 
 package kafka.examples;
 
-import kafka.Utilities;
+import kafka.avro_serde.AvroSchemas;
 import kafka.avro_serde.CustomAvroSerializer;
 import kafka.protobuf_serde.CustomProtobufSerializer;
 import kafka.protobuf_serde.generated.PbClasses;
-
-import org.apache.avro.Schema;
-import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.IntegerSerializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -54,7 +50,7 @@ public class ProducerThread extends Thread {
             case AVRO1:
             case AVRO2:
             case AVRO3:
-                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomAvroSerializer(Utilities.primitiveMessageSchema));
+                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomAvroSerializer(AvroSchemas.primitiveMessageSchema));
                 break;
             case PB1:
             case PB2:
@@ -94,8 +90,8 @@ public class ProducerThread extends Thread {
                 case AVRO1:
                 case AVRO2:
                 case AVRO3:
-                    GenericRecord record = new GenericData.Record(Utilities.primitiveMessageSchema);
-//                    record.put("query", query);
+                    GenericRecord record = new GenericData.Record(AvroSchemas.primitiveMessageSchema);
+                    record.put("query", query);
                     record.put("page_number", 12321);
                     for (int i = 0; i < this.iterations; i++) {
                         long startTime = System.currentTimeMillis();

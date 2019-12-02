@@ -7,16 +7,17 @@ package kafka.protobuf_serde;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
-
 import kafka.Utilities;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
 
-import java.io.*;
+import static kafka.Utilities.BUFFER_SIZE;
 
 public class CustomProtobufDeserializer<T extends MessageLite> implements Deserializer<T> {
 
     private final Parser<T> parser;
+    private final long [] serializedTimes;
+    private int currCount;
 
     /**
      * Returns a new instance of {@link CustomProtobufDeserializer}
@@ -25,6 +26,8 @@ public class CustomProtobufDeserializer<T extends MessageLite> implements Deseri
      */
     public CustomProtobufDeserializer(Parser<T> parser) {
         this.parser = parser;
+        this.serializedTimes = new long[BUFFER_SIZE];
+        this.currCount = 0;
     }
 
     @Override
@@ -36,7 +39,15 @@ public class CustomProtobufDeserializer<T extends MessageLite> implements Deseri
             long startTime = System.nanoTime();
             T ret = parser.parseFrom(data);
             long endTime = System.nanoTime();
-            Utilities.appendToFile("proto_de.txt", "" + (endTime - startTime) + "\n");
+
+            this.serializedTimes[this.currCount] = endTime - startTime;
+            this.currCount++;
+
+            if (this.currCount == BUFFER_SIZE){
+                Utilities.appendToFile("proto_de.txt", this.serializedTimes);
+                this.currCount = 0;
+            }
+
             return ret;
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
