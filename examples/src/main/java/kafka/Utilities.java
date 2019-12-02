@@ -17,9 +17,24 @@ public final class Utilities {
             e.printStackTrace();
         }
     }
-    public static final Schema searchRequestSchema = SchemaBuilder.record("SearchRequest").fields()
+
+    public static final Schema primitiveMessageSchema = SchemaBuilder.record("PrimitiveMessage").fields()
             .optionalString("query")
             .optionalInt("page_number")
             .optionalInt("result_per_page")
             .endRecord();
+//            .optionalLong("timestamp")
+//    public static final Schema mapSchema = SchemaBuilder.map().
+//
+//    public static final Schema complexMessageSchema = SchemaBuilder.record("ComplexMessage").fields()
+//            .name("storage").type().map().values().intType().noDefault()
+//            .name("arr").type().array().items().intType().noDefault()
+//            .optionalLong("timestamp")
+//            .endRecord();
+//
+//    public static final Schema nestedMessageSchema = SchemaBuilder.record("NestedMessage").fields()
+//            .optionalInt("id")
+//            .name("primitiveMsg").type(primitiveMessageSchema).noDefault()
+//            .optionalLong("timestamp")
+//            .endRecord();
 }

@@ -71,12 +71,12 @@ public class ConsumerThread extends ShutdownableThread {
             case AVRO1:
             case AVRO2:
             case AVRO3:
-                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomAvroDeserializer(Utilities.searchRequestSchema));
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomAvroDeserializer(Utilities.primitiveMessageSchema));
                 break;
             case PB1:
             case PB2:
             case PB3:
-                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomProtobufDeserializer<>(PbClasses.SearchRequest.parser()));
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomProtobufDeserializer<>(PbClasses.PrimitiveMessage.parser()));
                 break;
         }
 
@@ -114,7 +114,7 @@ public class ConsumerThread extends ShutdownableThread {
                 case AVRO1:
                 case AVRO2:
                 case AVRO3:
-                    ConsumerRecords<Integer, GenericRecord> avro_records = consumer.poll(Duration.ofSeconds(1));
+                    ConsumerRecords<Integer, GenericRecord> avro_records = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, GenericRecord> avro_r : avro_records) {
                         this.currIteration++;
                         System.out.println("=========== RECVD MESSAGE: (" + avro_r.key() + ") at offset " + avro_r.offset() + "============");

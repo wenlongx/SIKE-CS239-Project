@@ -54,7 +54,7 @@ public class ProducerThread extends Thread {
             case AVRO1:
             case AVRO2:
             case AVRO3:
-                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomAvroSerializer(Utilities.searchRequestSchema));
+                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomAvroSerializer(Utilities.primitiveMessageSchema));
                 break;
             case PB1:
             case PB2:
@@ -82,19 +82,20 @@ public class ProducerThread extends Thread {
                 case PB1:
                 case PB2:
                 case PB3:
-                    PbClasses.SearchRequest sr = PbClasses.SearchRequest.newBuilder().setQuery(query).setPageNumber(12321).build();
-                    System.out.println("GIVEN PB SERIALIZED SIZE: " + sr.getSerializedSize());
+                    PbClasses.PrimitiveMessage pm = PbClasses.PrimitiveMessage.newBuilder().setQuery(query).setPageNumber(12321).build();
+                    System.out.println("GIVEN PB SERIALIZED SIZE: " + pm.getSerializedSize());
 
                     for (int i = 0; i < this.iterations; i++) {
                         long startTime = System.currentTimeMillis();
-                        producer.send(new ProducerRecord<>(this.topic, 5, sr), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, pm), new DemoCallBack(startTime, i));
                     }
                     break;
+
                 case AVRO1:
                 case AVRO2:
                 case AVRO3:
-                    GenericRecord record = new GenericData.Record(Utilities.searchRequestSchema);
-                    record.put("query", query);
+                    GenericRecord record = new GenericData.Record(Utilities.primitiveMessageSchema);
+//                    record.put("query", query);
                     record.put("page_number", 12321);
                     for (int i = 0; i < this.iterations; i++) {
                         long startTime = System.currentTimeMillis();

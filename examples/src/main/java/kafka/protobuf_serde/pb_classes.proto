@@ -2,8 +2,22 @@ syntax = "proto3";
 
 package kafka.protobuf_serde.generated;
 
-message SearchRequest {
+message PrimitiveMessage {
   string query = 1;
   int32 page_number = 2;
   int32 result_per_page = 3;
+  int64 timestamp = 4;
 }
+
+message ComplexMessage{
+  map<string, int32> storage = 1;
+  repeated int32 arr = 2;
+  int64 timestamp = 3;
+}
+
+message NestedMessage{
+  int32 id = 1;
+  PrimitiveMessage primitiveMsg = 2;
+  int64 timestamp = 3;
+}
+

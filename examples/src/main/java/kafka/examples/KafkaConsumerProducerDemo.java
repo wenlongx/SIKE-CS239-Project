@@ -24,7 +24,7 @@ public class KafkaConsumerProducerDemo {
     public static void main(String[] args) throws InterruptedException {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("Enter the mode you wish to run, Protobuf (p), Avro (a), default (d): ");
+        System.out.println("Enter the mode you wish to run, Protobuf (p), Avro (a): ");
         String modeResp = scanner.nextLine();
         KafkaConsumerProducerDemo kafkaConsumerProducerDemo = new KafkaConsumerProducerDemo();
         for (int iterations : kafkaConsumerProducerDemo.ITERATIONS){
