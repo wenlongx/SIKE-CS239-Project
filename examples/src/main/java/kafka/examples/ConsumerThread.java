@@ -68,10 +68,10 @@ public class ConsumerThread extends ShutdownableThread {
         switch (serializerType) {
             case AVRO:
                 // TODO: Init the custom avro deserializer
-                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomAvroDeserializer(Utilities.searchRequestSchema));
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomAvroDeserializer(Utilities.primitiveMessageSchema));
                 break;
             case PB:
-                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomProtobufDeserializer<>(PbClasses.SearchRequest.parser()));
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomProtobufDeserializer<>(PbClasses.PrimitiveMessage.parser()));
                 break;
             case DEFAULT:
                 consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new StringDeserializer());

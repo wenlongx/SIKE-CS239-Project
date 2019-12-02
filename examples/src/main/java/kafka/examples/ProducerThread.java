@@ -52,7 +52,7 @@ public class ProducerThread extends Thread {
         switch (serializerType) {
             case AVRO:
                 // TODO: Init the cusom avro serializer
-                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomAvroSerializer(Utilities.searchRequestSchema));
+                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomAvroSerializer(Utilities.primitiveMessageSchema));
                 break;
             case PB:
                 producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomProtobufSerializer<>());
@@ -89,16 +89,16 @@ public class ProducerThread extends Thread {
             String query = br.readLine();
             switch (this.serializerType){
                 case PB:
-                    PbClasses.SearchRequest sr = PbClasses.SearchRequest.newBuilder().setQuery(query).setPageNumber(12321).build();
-                    System.out.println("GIVEN PB SERIALIZED SIZE: " + sr.getSerializedSize());
+                    PbClasses.PrimitiveMessage pm = PbClasses.PrimitiveMessage.newBuilder().setQuery(query).setPageNumber(12321).build();
+                    System.out.println("GIVEN PB SERIALIZED SIZE: " + pm.getSerializedSize());
 
                     for (int i = 0; i < 1000; i++) {
                         long startTime = System.currentTimeMillis();
-                        producer.send(new ProducerRecord<>(this.topic, 5, sr), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, pm), new DemoCallBack(startTime, i));
                     }
                     break;
                 case AVRO:
-                    GenericRecord record = new GenericData.Record(Utilities.searchRequestSchema);
+                    GenericRecord record = new GenericData.Record(Utilities.primitiveMessageSchema);
                     record.put("query", query);
                     record.put("page_number", 12321);
                     for (int i = 0; i < 1000; i++) {
