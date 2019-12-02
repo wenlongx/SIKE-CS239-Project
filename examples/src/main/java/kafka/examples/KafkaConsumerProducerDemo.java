@@ -19,44 +19,41 @@ package kafka.examples;
 import java.util.Scanner;
 
 public class KafkaConsumerProducerDemo {
-    public static void main(String[] args) throws InterruptedException {
-        boolean isAsync = false;
-        ProducerThread producerThread = null;
-        ConsumerThread consumerThread = null;
+    private final int [] ITERATIONS = {10};
 
+    public static void main(String[] args) throws InterruptedException {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Do you wish to send the data in an async manner? (y/n)");
-        String asyncResp = scanner.nextLine();
-        if (asyncResp.toLowerCase().equals("y")) {
-            isAsync = true;
-        }
 
         System.out.println("Enter the mode you wish to run, Protobuf (p), Avro (a), default (d): ");
         String modeResp = scanner.nextLine();
-        SerializerType currSerializer = null;
-
-        switch (modeResp.toLowerCase()) {
-            case "p":
-                currSerializer = SerializerType.PB;
-                break;
-            case "a":
-                currSerializer = SerializerType.AVRO;
-                break;
-            case "d":
-                currSerializer = SerializerType.DEFAULT;
-                break;
-            default:
-                System.out.println("Invalid mode entered, exiting program now ...");
-                return;
+        KafkaConsumerProducerDemo kafkaConsumerProducerDemo = new KafkaConsumerProducerDemo();
+        for (int iterations : kafkaConsumerProducerDemo.ITERATIONS){
+            switch (modeResp.toLowerCase()) {
+                case "p":
+                    kafkaConsumerProducerDemo.run(SerializerType.PB1, iterations);
+                    kafkaConsumerProducerDemo.run(SerializerType.PB2, iterations);
+                    kafkaConsumerProducerDemo.run(SerializerType.PB3, iterations);
+                    break;
+                case "a":
+                    kafkaConsumerProducerDemo.run(SerializerType.AVRO1, iterations);
+                    kafkaConsumerProducerDemo.run(SerializerType.AVRO2, iterations);
+                    kafkaConsumerProducerDemo.run(SerializerType.AVRO3, iterations);
+                    break;
+                default:
+                    System.out.println("Invalid mode entered, exiting program now ...");
+            }
         }
-        producerThread = new ProducerThread(KafkaProperties.TOPIC, isAsync, currSerializer);
-        consumerThread = new ConsumerThread(KafkaProperties.TOPIC, currSerializer);
+    }
+
+    private void run(SerializerType serializerType, int iterations) throws  InterruptedException{
+
+        ProducerThread producerThread = new ProducerThread(KafkaProperties.TOPIC, serializerType, iterations);
+        ConsumerThread consumerThread = new ConsumerThread(KafkaProperties.TOPIC, serializerType, iterations);
 
         // Start the producer thread first and then the consumer thread
         producerThread.start();
         consumerThread.start();
 
-//        producerThread.join();
-//        consumerThread.shutdown();
+        consumerThread.join();
     }
 }

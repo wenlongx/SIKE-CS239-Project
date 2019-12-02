@@ -53,9 +53,11 @@ public class ConsumerThread extends ShutdownableThread {
     private Consumer consumer;
     private final String topic;
     private final SerializerType serializerType;
+    private final int iterations;
+    private int currIteration;
 
-    public ConsumerThread(String topic, SerializerType serializerType) {
-        super("KafkaConsumerExample", false);
+    public ConsumerThread(String topic, SerializerType serializerType, int iterations) {
+        super("KafkaConsumerExample", true);
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaProperties.KAFKA_SERVER_URL + ":" + KafkaProperties.KAFKA_SERVER_PORT);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "DemoConsumer");
@@ -63,72 +65,66 @@ public class ConsumerThread extends ShutdownableThread {
         props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
 
         // TODO: Check what this one actually does. I am a bit dubious about it -- Sahil
-        props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
+        props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "10000");
 
         switch (serializerType) {
-            case AVRO:
-                // TODO: Init the custom avro deserializer
+            case AVRO1:
+            case AVRO2:
+            case AVRO3:
                 consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomAvroDeserializer(Utilities.searchRequestSchema));
                 break;
-            case PB:
+            case PB1:
+            case PB2:
+            case PB3:
                 consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomProtobufDeserializer<>(PbClasses.SearchRequest.parser()));
-                break;
-            case DEFAULT:
-                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new StringDeserializer());
                 break;
         }
 
-//        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-
         this.topic = topic;
         this.serializerType = serializerType;
+        this.iterations = iterations;
+        this.currIteration = 0;
+        System.out.println("Starting the consumer ...");
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void doWork() {
-//        String userSchema = "{\"type\":\"record\"," +
-//                "\"name\":\"myrecord\"," +
-//                "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
-//        Schema.Parser parser = new Schema.Parser();
-//        Schema schema = parser.parse(userSchema);
-
         try {
             consumer.subscribe(Collections.singletonList(this.topic));
             Map<MetricName, Metric> metricMap = null;
 
             // TODO: This is an ugly switch statement, perhaps there is something better? -- Sahil
-            switch (this.serializerType){
-                case PB:
-                    ConsumerRecords<Integer, MessageLite> records = consumer.poll(Duration.ofSeconds(1));
+            switch (this.serializerType) {
+                case PB1:
+                case PB2:
+                case PB3:
+                    ConsumerRecords<Integer, MessageLite> records = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, MessageLite> record : records) {
+                        this.currIteration++;
                         System.out.println("===========Received message: (" + record.key() + ") at offset " + record.offset() + "===========");
                         metricMap = consumer.metrics();
-                        for( MetricName m_name : metricMap.keySet()){
+                        for (MetricName m_name : metricMap.keySet()) {
                             Metric m = metricMap.get(m_name);
                             System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
                         }
                     }
 
                     break;
-                case AVRO:
+                case AVRO1:
+                case AVRO2:
+                case AVRO3:
                     ConsumerRecords<Integer, GenericRecord> avro_records = consumer.poll(Duration.ofSeconds(1));
-                    for(ConsumerRecord<Integer, GenericRecord> avro_r : avro_records){
+                    for (ConsumerRecord<Integer, GenericRecord> avro_r : avro_records) {
+                        this.currIteration++;
                         System.out.println("=========== RECVD MESSAGE: (" + avro_r.key() + ") at offset " + avro_r.offset() + "============");
                         metricMap = consumer.metrics();
-                        for( MetricName m_name : metricMap.keySet()){
+                        for (MetricName m_name : metricMap.keySet()) {
                             Metric m = metricMap.get(m_name);
                             System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
                         }
                     }
 
-                    break;
-                case DEFAULT:
-                    metricMap = consumer.metrics();
-                    for( MetricName m_name : metricMap.keySet()){
-                        Metric m = metricMap.get(m_name);
-                        System.out.println(m_name.toString());
-                    }
                     break;
             }
         } catch (WakeupException e) {
@@ -137,7 +133,11 @@ public class ConsumerThread extends ShutdownableThread {
             System.out.println("Caught a deserialization exception");
         } finally {
             // Shutdown the consumer
-            System.out.println("Closing the consumer as well ...");
+            if (this.currIteration >= this.iterations){
+                System.out.println("Closing the consumer ...");
+                consumer.close();
+                this.shutdown();
+            }
         }
     }
 }

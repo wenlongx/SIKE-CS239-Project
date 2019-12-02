@@ -42,7 +42,7 @@ public class CustomAvroSerializer implements Serializer<GenericRecord> {
             e.printStackTrace();
         }
 
-        byte[] arr  = stream.toByteArray();
+        byte[] arr = stream.toByteArray();
 
         long endTime = System.nanoTime();
         Utilities.appendToFile("avro_ser.txt", (endTime - startTime) + "\n");

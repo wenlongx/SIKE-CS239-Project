@@ -25,12 +25,12 @@ public class CustomAvroDeserializer implements Deserializer<GenericRecord> {
      *
      * @param schema The AVRO {@link Schema}
      */
-    public CustomAvroDeserializer(Schema schema){
+    public CustomAvroDeserializer(Schema schema) {
         datumReader = new GenericDatumReader<>(schema);
     }
 
     @Override
-    public GenericRecord deserialize(String topic, byte[] data){
+    public GenericRecord deserialize(String topic, byte[] data) {
         long startTime = System.nanoTime();
         BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(data, null);
 

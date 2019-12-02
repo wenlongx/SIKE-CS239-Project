@@ -41,72 +41,65 @@ import java.util.Properties;
 public class ProducerThread extends Thread {
     private Producer producer;
     private final String topic;
-    private final Boolean isAsync;
     private final SerializerType serializerType;
+    private final int iterations;
 
-    public ProducerThread(String topic, Boolean isAsync, SerializerType serializerType) {
+    public ProducerThread(String topic, SerializerType serializerType, int iterations) {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaProperties.KAFKA_SERVER_URL + ":" + KafkaProperties.KAFKA_SERVER_PORT);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "DemoProducer");
 
+        // The key is the Partition Name, and for our experiments will be an integer.
         switch (serializerType) {
-            case AVRO:
-                // TODO: Init the cusom avro serializer
+            case AVRO1:
+            case AVRO2:
+            case AVRO3:
                 producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomAvroSerializer(Utilities.searchRequestSchema));
                 break;
-            case PB:
+            case PB1:
+            case PB2:
+            case PB3:
                 producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomProtobufSerializer<>());
-                break;
-            case DEFAULT:
-                producer = new KafkaProducer<>(props, new IntegerSerializer(), new StringSerializer());
                 break;
         }
 
-//        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         this.topic = topic;
-        this.isAsync = isAsync;
         this.serializerType = serializerType;
+        this.iterations = iterations;
 
         System.out.println("Created the producer");
     }
 
     @SuppressWarnings("unchecked")
     public void run() {
-
-//        String key = "key1";
-//        String userSchema = "{\"type\":\"record\"," +
-//                "\"name\":\"myrecord\"," +
-//                "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
-//        Schema.Parser parser = new Schema.Parser();
-//        Schema schema = parser.parse(userSchema);
-//        GenericRecord avroRecord = new GenericData.Record(schema);
-//        avroRecord.put("f1", "value1");
         System.out.println("Started to run the producer ...");
 
         try {
             //10MB character query
             BufferedReader br = Files.newBufferedReader(Paths.get("./examples/src/main/java/kafka/examples/query.txt"), StandardCharsets.UTF_8);
             String query = br.readLine();
-            switch (this.serializerType){
-                case PB:
+            switch (this.serializerType) {
+                case PB1:
+                case PB2:
+                case PB3:
                     PbClasses.SearchRequest sr = PbClasses.SearchRequest.newBuilder().setQuery(query).setPageNumber(12321).build();
                     System.out.println("GIVEN PB SERIALIZED SIZE: " + sr.getSerializedSize());
 
-                    for (int i = 0; i < 1000; i++) {
+                    for (int i = 0; i < this.iterations; i++) {
                         long startTime = System.currentTimeMillis();
                         producer.send(new ProducerRecord<>(this.topic, 5, sr), new DemoCallBack(startTime, i));
                     }
                     break;
-                case AVRO:
+                case AVRO1:
+                case AVRO2:
+                case AVRO3:
                     GenericRecord record = new GenericData.Record(Utilities.searchRequestSchema);
                     record.put("query", query);
                     record.put("page_number", 12321);
-                    for (int i = 0; i < 1000; i++) {
+                    for (int i = 0; i < this.iterations; i++) {
                         long startTime = System.currentTimeMillis();
                         producer.send(new ProducerRecord<>(this.topic, 10, record), new DemoCallBack(startTime, i));
                     }
-                    break;
-                case DEFAULT:
                     break;
             }
 
