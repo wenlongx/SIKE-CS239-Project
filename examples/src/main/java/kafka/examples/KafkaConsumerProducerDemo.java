@@ -16,19 +16,20 @@
  */
 package kafka.examples;
 
+import java.io.*;
 import java.util.Scanner;
 
 public class KafkaConsumerProducerDemo {
-    private final int [] ITERATIONS = {10};
+    private final int[] ITERATIONS = {10};
 
     public static void main(String[] args) throws InterruptedException {
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Enter the mode you wish to run, Protobuf (p), Avro (a): ");
-        String modeResp = scanner.nextLine();
+        String modeResp = scanner.nextLine().toLowerCase();
         KafkaConsumerProducerDemo kafkaConsumerProducerDemo = new KafkaConsumerProducerDemo();
-        for (int iterations : kafkaConsumerProducerDemo.ITERATIONS){
-            switch (modeResp.toLowerCase()) {
+        for (int iterations : kafkaConsumerProducerDemo.ITERATIONS) {
+            switch (modeResp) {
                 case "p":
                     kafkaConsumerProducerDemo.run(SerializerType.PB1, iterations);
                     kafkaConsumerProducerDemo.run(SerializerType.PB2, iterations);
@@ -43,9 +44,50 @@ public class KafkaConsumerProducerDemo {
                     System.out.println("Invalid mode entered, exiting program now ...");
             }
         }
+
+        System.out.println("Converting text files now ...");
+
+        for (int iterations : kafkaConsumerProducerDemo.ITERATIONS) {
+            for (SerializerType serializerType : SerializerType.values()) {
+                if (
+                        (modeResp.equals("p") && (serializerType == SerializerType.PB1 || serializerType == SerializerType.PB2 || serializerType == SerializerType.PB3)) ||
+                        (modeResp.equals("a") && (serializerType == SerializerType.AVRO1 || serializerType == SerializerType.AVRO2 || serializerType == SerializerType.AVRO3))) {
+                    try {
+                        PrintWriter pw = new PrintWriter(serializerType.toString() + "_" + iterations + "_serdes.csv");
+                        String serFileName = serializerType.toString() + "_" + iterations + "_ser.txt";
+                        String deserFileName = serializerType.toString() + "_" + iterations + "_des.txt";
+                        File serFile = new File(serFileName);
+                        File deserFile = new File(deserFileName);
+
+                        BufferedReader ser = new BufferedReader((new FileReader(serFile)));
+                        BufferedReader des = new BufferedReader((new FileReader(deserFile)));
+
+                        String serLine = ser.readLine();
+                        String desLine = des.readLine();
+                        while (serLine != null && desLine != null) {
+                            pw.println(serLine + "," + desLine);
+                            serLine = ser.readLine();
+                            desLine = des.readLine();
+                        }
+
+                        pw.flush();
+                        ser.close();
+                        des.close();
+                        pw.close();
+
+                        serFile.delete();
+                        deserFile.delete();
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
     }
 
-    private void run(SerializerType serializerType, int iterations) throws  InterruptedException{
+    private void run(SerializerType serializerType, int iterations) throws InterruptedException {
 
         ProducerThread producerThread = new ProducerThread(KafkaProperties.TOPIC, serializerType, iterations);
         ConsumerThread consumerThread = new ConsumerThread(KafkaProperties.TOPIC, serializerType, iterations);

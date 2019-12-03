@@ -31,7 +31,7 @@ public class CustomProtobufDeserializer<T extends MessageLite> implements Deseri
         this.parser = parser;
         this.serializedTimes = new long[BUFFER_SIZE];
         this.currCount = 0;
-        this.filename = "proto_de_" + serializerType.toString() + "_" + iterations + ".txt";
+        this.filename = serializerType.toString() + "_" + iterations + "_des.txt";
     }
 
     @Override

@@ -36,7 +36,7 @@ public class CustomAvroSerializer implements Serializer<GenericRecord> {
         this.datumWriter = new GenericDatumWriter<>(schema);
         this.serializedTimes = new long[BUFFER_SIZE];
         this.currCount = 0;
-        this.filename = "avro_ser_" + serializerType.toString() + "_" + iterations + ".txt";
+        this.filename = serializerType.toString() + "_" + iterations + "_ser.txt";
     }
 
     @Override

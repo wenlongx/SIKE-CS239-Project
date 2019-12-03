@@ -26,7 +26,7 @@ public class CustomProtobufSerializer<T extends MessageLite> implements Serializ
     public CustomProtobufSerializer(SerializerType serializerType, int iterations) {
         this.serializedTimes = new long[BUFFER_SIZE];
         this.currCount = 0;
-        this.filename = "proto_ser_" + serializerType.toString() + "_" + iterations + ".txt";
+        this.filename = serializerType.toString() + "_" + iterations + "_ser.txt";
     }
 
     @Override
