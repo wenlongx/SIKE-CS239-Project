@@ -8,6 +8,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
 import kafka.Utilities;
+import kafka.examples.SerializerType;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
 
@@ -16,18 +17,21 @@ import static kafka.Utilities.BUFFER_SIZE;
 public class CustomProtobufDeserializer<T extends MessageLite> implements Deserializer<T> {
 
     private final Parser<T> parser;
-    private final long [] serializedTimes;
+    private final long[] serializedTimes;
     private int currCount;
+    private final String filename;
 
     /**
      * Returns a new instance of {@link CustomProtobufDeserializer}
      *
-     * @param parser The Protobuf {@link Parser}
+     * @param parser     The Protobuf {@link Parser}
+     * @param iterations The number of iterations this deserializer will run for
      */
-    public CustomProtobufDeserializer(Parser<T> parser) {
+    public CustomProtobufDeserializer(Parser<T> parser, SerializerType serializerType, int iterations) {
         this.parser = parser;
         this.serializedTimes = new long[BUFFER_SIZE];
         this.currCount = 0;
+        this.filename = "proto_de_" + serializerType.toString() + "_" + iterations + ".txt";
     }
 
     @Override
@@ -43,8 +47,8 @@ public class CustomProtobufDeserializer<T extends MessageLite> implements Deseri
             this.serializedTimes[this.currCount] = endTime - startTime;
             this.currCount++;
 
-            if (this.currCount == BUFFER_SIZE){
-                Utilities.appendToFile("proto_de.txt", this.serializedTimes);
+            if (this.currCount == BUFFER_SIZE) {
+                Utilities.appendToFile(this.filename, this.serializedTimes);
                 this.currCount = 0;
             }
 

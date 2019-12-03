@@ -48,14 +48,22 @@ public class ProducerThread extends Thread {
         // The key is the Partition Name, and for our experiments will be an integer.
         switch (serializerType) {
             case AVRO1:
+                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomAvroSerializer(AvroSchemas.primitiveMessageSchema, serializerType, iterations));
+                break;
             case AVRO2:
+                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomAvroSerializer(AvroSchemas.complexMessageSchema, serializerType, iterations));
+                break;
             case AVRO3:
-                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomAvroSerializer(AvroSchemas.primitiveMessageSchema));
+                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomAvroSerializer(AvroSchemas.nestedMessageSchema, serializerType, iterations));
                 break;
             case PB1:
+                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomProtobufSerializer<>(serializerType, iterations));
+                break;
             case PB2:
+                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomProtobufSerializer<>(serializerType, iterations));
+                break;
             case PB3:
-                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomProtobufSerializer<>());
+                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomProtobufSerializer<>(serializerType, iterations));
                 break;
         }
 
@@ -73,29 +81,64 @@ public class ProducerThread extends Thread {
         try {
             //10MB character query
             BufferedReader br = Files.newBufferedReader(Paths.get("./examples/src/main/java/kafka/examples/query.txt"), StandardCharsets.UTF_8);
-            String query = br.readLine();
+            String longQuery = br.readLine();
             switch (this.serializerType) {
                 case PB1:
-                case PB2:
-                case PB3:
-                    PbClasses.PrimitiveMessage pm = PbClasses.PrimitiveMessage.newBuilder().setQuery(query).setPageNumber(12321).build();
-                    System.out.println("GIVEN PB SERIALIZED SIZE: " + pm.getSerializedSize());
-
                     for (int i = 0; i < this.iterations; i++) {
                         long startTime = System.currentTimeMillis();
-                        producer.send(new ProducerRecord<>(this.topic, 5, pm), new DemoCallBack(startTime, i));
+                        PbClasses.PrimitiveMessage.Builder builder = PbClasses.PrimitiveMessage.newBuilder();
+                        builder.setQuery(longQuery);
+                        builder.setPageNumber(12321);
+                        builder.setTimestamp(startTime);
+                        builder.setResultPerPage(i);
+                        PbClasses.PrimitiveMessage primitiveMessage = builder.build();
+                        producer.send(new ProducerRecord<>(this.topic, 5, primitiveMessage), new DemoCallBack(startTime, i));
                     }
                     break;
-
-                case AVRO1:
-                case AVRO2:
-                case AVRO3:
-                    GenericRecord record = new GenericData.Record(AvroSchemas.primitiveMessageSchema);
-                    record.put("query", query);
-                    record.put("page_number", 12321);
+                case PB2:
                     for (int i = 0; i < this.iterations; i++) {
                         long startTime = System.currentTimeMillis();
-                        producer.send(new ProducerRecord<>(this.topic, 10, record), new DemoCallBack(startTime, i));
+                        PbClasses.ComplexMessage.Builder builder = PbClasses.ComplexMessage.newBuilder();
+                        builder.setTimestamp(startTime);
+                        PbClasses.ComplexMessage complexMessage = builder.build();
+                        producer.send(new ProducerRecord<>(this.topic, 5, complexMessage), new DemoCallBack(startTime, i));
+                    }
+                    break;
+                case PB3:
+                    for (int i = 0; i < this.iterations; i++) {
+                        long startTime = System.currentTimeMillis();
+                        PbClasses.NestedMessage.Builder builder = PbClasses.NestedMessage.newBuilder();
+                        builder.setTimestamp(startTime);
+                        PbClasses.NestedMessage nestedMessage = builder.build();
+                        producer.send(new ProducerRecord<>(this.topic, 5, nestedMessage), new DemoCallBack(startTime, i));
+                    }
+                    break;
+                case AVRO1:
+                    for (int i = 0; i < this.iterations; i++) {
+                        long startTime = System.currentTimeMillis();
+                        GenericRecord record = new GenericData.Record(AvroSchemas.primitiveMessageSchema);
+                        record.put("query", longQuery);
+                        record.put("page_number", 12321);
+                        record.put("timestamp", startTime);
+                        record.put("result_per_page", i);
+                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(startTime, i));
+                    }
+                    break;
+                case AVRO2:
+                    for (int i = 0; i < this.iterations; i++) {
+                        long startTime = System.currentTimeMillis();
+                        GenericRecord record = new GenericData.Record(AvroSchemas.complexMessageSchema);
+                        record.put("timestamp", startTime);
+                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(startTime, i));
+                    }
+                    break;
+                case AVRO3:
+                    for (int i = 0; i < this.iterations; i++) {
+                        long startTime = System.currentTimeMillis();
+                        GenericRecord record = new GenericData.Record(AvroSchemas.nestedMessageSchema);
+                        record.put("timestamp", startTime);
+                        record.put("primitiveMsg", new GenericData.Record(AvroSchemas.primitiveMessageSchema));
+                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(startTime, i));
                     }
                     break;
             }
@@ -105,7 +148,6 @@ public class ProducerThread extends Thread {
         } finally {
 //            When you're finished producing records, you can flush the producer to ensure it has all been written to
 //            Kafka and then close the producer to free its resources.
-
             System.out.println("Closing the producer ...");
             producer.flush();
             producer.close();
@@ -127,6 +169,7 @@ class DemoCallBack implements Callback {
      * A callback method the user can implement to provide asynchronous handling of request completion. This method will
      * be called when the record sent to the server has been acknowledged. When exception is not null in the callback,
      * metadata will contain the special -1 value for all fields except for topicPartition, which will be valid.
+     * The acknowledgment is from the broker (NOT the consumer).
      *
      * @param metadata  The metadata for the record that was sent (i.e. the partition and offset). Null if an error
      *                  occurred.

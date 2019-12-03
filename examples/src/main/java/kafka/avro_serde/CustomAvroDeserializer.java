@@ -5,6 +5,7 @@
 package kafka.avro_serde;
 
 import kafka.Utilities;
+import kafka.examples.SerializerType;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
@@ -21,18 +22,21 @@ import static kafka.Utilities.BUFFER_SIZE;
 public class CustomAvroDeserializer implements Deserializer<GenericRecord> {
 
     private final DatumReader<GenericRecord> datumReader;
-    private final long [] serializedTimes;
+    private final long[] serializedTimes;
     private int currCount;
+    private final String filename;
 
     /**
      * Returns a new instance of {@link CustomAvroDeserializer}
      *
-     * @param schema The AVRO {@link Schema}
+     * @param schema     The AVRO {@link Schema}
+     * @param iterations The number of iterations this deserializer will run for
      */
-    public CustomAvroDeserializer(Schema schema) {
+    public CustomAvroDeserializer(Schema schema, SerializerType serializerType, int iterations) {
         this.datumReader = new GenericDatumReader<>(schema);
-        this.serializedTimes = new long [BUFFER_SIZE];
+        this.serializedTimes = new long[BUFFER_SIZE];
         this.currCount = 0;
+        this.filename = "avro_de_" + serializerType.toString() + "_" + iterations + ".txt";
     }
 
     @Override
@@ -46,8 +50,8 @@ public class CustomAvroDeserializer implements Deserializer<GenericRecord> {
             this.serializedTimes[this.currCount] = endTime - startTime;
             this.currCount++;
 
-            if (this.currCount == BUFFER_SIZE){
-                Utilities.appendToFile("avro_de.txt", this.serializedTimes);
+            if (this.currCount == BUFFER_SIZE) {
+                Utilities.appendToFile(this.filename, this.serializedTimes);
                 this.currCount = 0;
             }
 

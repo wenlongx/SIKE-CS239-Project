@@ -51,18 +51,27 @@ public class ConsumerThread extends ShutdownableThread {
         props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
 
         // TODO: Check what this one actually does. I am a bit dubious about it -- Sahil
+        // Apparently it must be >= 6000 since that is the zookeeper connection timeout
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "10000");
 
         switch (serializerType) {
             case AVRO1:
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomAvroDeserializer(AvroSchemas.primitiveMessageSchema, serializerType, iterations));
+                break;
             case AVRO2:
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomAvroDeserializer(AvroSchemas.complexMessageSchema, serializerType, iterations));
+                break;
             case AVRO3:
-                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomAvroDeserializer(AvroSchemas.primitiveMessageSchema));
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomAvroDeserializer(AvroSchemas.nestedMessageSchema, serializerType, iterations));
                 break;
             case PB1:
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomProtobufDeserializer<>(PbClasses.PrimitiveMessage.parser(), serializerType, iterations));
+                break;
             case PB2:
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomProtobufDeserializer<>(PbClasses.ComplexMessage.parser(), serializerType, iterations));
+                break;
             case PB3:
-                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomProtobufDeserializer<>(PbClasses.PrimitiveMessage.parser()));
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomProtobufDeserializer<>(PbClasses.NestedMessage.parser(), serializerType, iterations));
                 break;
         }
 
@@ -82,6 +91,7 @@ public class ConsumerThread extends ShutdownableThread {
 
             // TODO: This is an ugly switch statement, perhaps there is something better? -- Sahil
             switch (this.serializerType) {
+                // Since the consumer is generic enough, all three PBs use the same code
                 case PB1:
                 case PB2:
                 case PB3:
@@ -95,8 +105,8 @@ public class ConsumerThread extends ShutdownableThread {
                             System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
                         }
                     }
-
                     break;
+                // Since the consumer is generic enough, all three AVROs use the same code
                 case AVRO1:
                 case AVRO2:
                 case AVRO3:
@@ -110,7 +120,6 @@ public class ConsumerThread extends ShutdownableThread {
                             System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
                         }
                     }
-
                     break;
             }
         } catch (WakeupException e) {
@@ -119,7 +128,7 @@ public class ConsumerThread extends ShutdownableThread {
             System.out.println("Caught a deserialization exception");
         } finally {
             // Close the consumer and shutdown the thread
-            if (this.currIteration >= this.iterations){
+            if (this.currIteration >= this.iterations) {
                 System.out.println("Closing the consumer ...");
                 consumer.close();
                 this.shutdown();

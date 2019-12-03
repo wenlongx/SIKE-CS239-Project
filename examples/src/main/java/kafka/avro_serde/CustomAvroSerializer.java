@@ -5,6 +5,7 @@
 package kafka.avro_serde;
 
 import kafka.Utilities;
+import kafka.examples.SerializerType;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
@@ -21,17 +22,21 @@ import static kafka.Utilities.BUFFER_SIZE;
 public class CustomAvroSerializer implements Serializer<GenericRecord> {
 
     private final DatumWriter<GenericRecord> datumWriter;
-    private final long [] serializedTimes;
+    private final long[] serializedTimes;
     private int currCount;
+    private final String filename;
+
     /**
      * Returns a new instance of {@link CustomAvroSerializer}
      *
-     * @param schema The AVRO {@link Schema}
+     * @param schema     The AVRO {@link Schema}
+     * @param iterations The number of iterations this serializer will run for
      */
-    public CustomAvroSerializer(Schema schema) {
+    public CustomAvroSerializer(Schema schema, SerializerType serializerType, int iterations) {
         this.datumWriter = new GenericDatumWriter<>(schema);
         this.serializedTimes = new long[BUFFER_SIZE];
         this.currCount = 0;
+        this.filename = "avro_ser_" + serializerType.toString() + "_" + iterations + ".txt";
     }
 
     @Override
@@ -55,8 +60,8 @@ public class CustomAvroSerializer implements Serializer<GenericRecord> {
         this.serializedTimes[this.currCount] = endTime - startTime;
         this.currCount++;
 
-        if (this.currCount == BUFFER_SIZE){
-            Utilities.appendToFile("avro_ser.txt",  this.serializedTimes);
+        if (this.currCount == BUFFER_SIZE) {
+            Utilities.appendToFile(this.filename, this.serializedTimes);
             this.currCount = 0;
         }
 
