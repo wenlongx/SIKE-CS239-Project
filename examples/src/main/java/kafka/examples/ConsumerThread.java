@@ -89,7 +89,6 @@ public class ConsumerThread extends ShutdownableThread {
             consumer.subscribe(Collections.singletonList(this.topic));
             Map<MetricName, Metric> metricMap = null;
 
-            // TODO: This is an ugly switch statement, perhaps there is something better? -- Sahil
             switch (this.serializerType) {
                 // Since the consumer is generic enough, all three PBs use the same code
                 case PB1:
@@ -98,12 +97,14 @@ public class ConsumerThread extends ShutdownableThread {
                     ConsumerRecords<Integer, MessageLite> records = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, MessageLite> record : records) {
                         this.currIteration++;
-                        System.out.println("===========Received message: (" + record.key() + ") at offset " + record.offset() + "===========");
-                        metricMap = consumer.metrics();
-                        for (MetricName m_name : metricMap.keySet()) {
-                            Metric m = metricMap.get(m_name);
-                            System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
-                        }
+                        System.out.println("===========Received message: (" + record.value().toString() + ") at offset " + record.offset() + "===========");
+
+                        // Uncomment the below code if you want to print the metrics
+//                        metricMap = consumer.metrics();
+//                        for (MetricName m_name : metricMap.keySet()) {
+//                            Metric m = metricMap.get(m_name);
+//                            System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
+//                        }
                     }
                     break;
                 // Since the consumer is generic enough, all three AVROs use the same code
@@ -113,12 +114,14 @@ public class ConsumerThread extends ShutdownableThread {
                     ConsumerRecords<Integer, GenericRecord> avro_records = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, GenericRecord> avro_r : avro_records) {
                         this.currIteration++;
-                        System.out.println("=========== RECVD MESSAGE: (" + avro_r.key() + ") at offset " + avro_r.offset() + "============");
-                        metricMap = consumer.metrics();
-                        for (MetricName m_name : metricMap.keySet()) {
-                            Metric m = metricMap.get(m_name);
-                            System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
-                        }
+                        System.out.println("=========== RECVD MESSAGE: (" + avro_r.toString() + ") at offset " + avro_r.offset() + "============");
+
+                        // Uncomment the below code if you want to print the metrics
+//                        metricMap = consumer.metrics();
+//                        for (MetricName m_name : metricMap.keySet()) {
+//                            Metric m = metricMap.get(m_name);
+//                            System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
+//                        }
                     }
                     break;
             }
