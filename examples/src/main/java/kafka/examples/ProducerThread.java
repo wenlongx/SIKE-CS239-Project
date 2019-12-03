@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Properties;
+import java.util.*;
 
 public class ProducerThread extends Thread {
     private Producer producer;
@@ -77,6 +77,14 @@ public class ProducerThread extends Thread {
     @SuppressWarnings("unchecked")
     public void run() {
         System.out.println("Started to run the producer ...");
+        List<Integer> integerArrayList = new ArrayList<>();
+        for (int i = 0; i < 100; i++){
+            integerArrayList.add(i);
+        }
+        Map<String, Integer> stringIntegerMap = new HashMap<>();
+        for (int i = 0; i < 100; i++){
+            stringIntegerMap.put("key" + i, i);
+        }
 
         try {
             //10MB character query
@@ -100,6 +108,8 @@ public class ProducerThread extends Thread {
                         long startTime = System.currentTimeMillis();
                         PbClasses.ComplexMessage.Builder builder = PbClasses.ComplexMessage.newBuilder();
                         builder.setTimestamp(startTime);
+                        builder.addAllArr(integerArrayList);
+                        builder.putAllStorage(stringIntegerMap);
                         PbClasses.ComplexMessage complexMessage = builder.build();
                         producer.send(new ProducerRecord<>(this.topic, 5, complexMessage), new DemoCallBack(startTime, i));
                     }
@@ -109,6 +119,8 @@ public class ProducerThread extends Thread {
                         long startTime = System.currentTimeMillis();
                         PbClasses.NestedMessage.Builder builder = PbClasses.NestedMessage.newBuilder();
                         builder.setTimestamp(startTime);
+                        builder.setId(i);
+                        builder.setPrimitiveMsg(PbClasses.PrimitiveMessage.newBuilder().setQuery("hello there").setPageNumber(12321).setResultPerPage(i).build());
                         PbClasses.NestedMessage nestedMessage = builder.build();
                         producer.send(new ProducerRecord<>(this.topic, 5, nestedMessage), new DemoCallBack(startTime, i));
                     }
@@ -129,6 +141,7 @@ public class ProducerThread extends Thread {
                         long startTime = System.currentTimeMillis();
                         GenericRecord record = new GenericData.Record(AvroSchemas.complexMessageSchema);
                         record.put("timestamp", startTime);
+
                         producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(startTime, i));
                     }
                     break;
