@@ -210,7 +210,7 @@ class DemoCallBack implements Callback {
     public void onCompletion(RecordMetadata metadata, Exception exception) {
         long elapsedTime = System.currentTimeMillis() - startTime;
         if (metadata != null) {
-            System.out.println("Message " + messageNumber + " was sent and it took " + elapsedTime + " ms.");
+//            System.out.println("Message " + messageNumber + " was sent and it took " + elapsedTime + " ms.");
         } else {
             exception.printStackTrace();
         }
