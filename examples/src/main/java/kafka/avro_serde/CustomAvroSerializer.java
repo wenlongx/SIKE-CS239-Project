@@ -29,8 +29,9 @@ public class CustomAvroSerializer implements Serializer<GenericRecord> {
     /**
      * Returns a new instance of {@link CustomAvroSerializer}
      *
-     * @param schema     The AVRO {@link Schema}
-     * @param iterations The number of iterations this serializer will run for
+     * @param schema         The AVRO {@link Schema}
+     * @param serializerType The serializer type being used
+     * @param iterations     The number of iterations this serializer will run for
      */
     public CustomAvroSerializer(Schema schema, SerializerType serializerType, int iterations) {
         this.datumWriter = new GenericDatumWriter<>(schema);

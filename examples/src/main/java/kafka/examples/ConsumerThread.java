@@ -19,6 +19,7 @@ package kafka.examples;
 import com.google.protobuf.MessageLite;
 import kafka.avro_serde.AvroSchemas;
 import kafka.avro_serde.CustomAvroDeserializer;
+import kafka.capnproto_serde.CustomCapnProtoDeserializer;
 import kafka.protobuf_serde.CustomProtobufDeserializer;
 import kafka.protobuf_serde.generated.PbClasses;
 import kafka.utils.ShutdownableThread;
@@ -29,6 +30,7 @@ import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
+import org.capnproto.MessageReader;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -73,6 +75,9 @@ public class ConsumerThread extends ShutdownableThread {
             case PB3:
                 consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomProtobufDeserializer<>(PbClasses.NestedMessage.parser(), serializerType, iterations));
                 break;
+            case CAPNPROTO1:
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomCapnProtoDeserializer(serializerType, iterations));
+                break;
         }
 
         this.topic = topic;
@@ -113,6 +118,20 @@ public class ConsumerThread extends ShutdownableThread {
                 case AVRO3:
                     ConsumerRecords<Integer, GenericRecord> avro_records = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, GenericRecord> avro_r : avro_records) {
+                        this.currIteration++;
+//                        System.out.println("=========== RECVD MESSAGE: (" + avro_r.toString() + ") at offset " + avro_r.offset() + "============");
+
+                        // Uncomment the below code if you want to print the metrics
+//                        metricMap = consumer.metrics();
+//                        for (MetricName m_name : metricMap.keySet()) {
+//                            Metric m = metricMap.get(m_name);
+//                            System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
+//                        }
+                    }
+                    break;
+                case CAPNPROTO1:
+                    ConsumerRecords<Integer, MessageReader> capnproto_records = consumer.poll(Duration.ofSeconds(10));
+                    for (ConsumerRecord<Integer, MessageReader> record : capnproto_records) {
                         this.currIteration++;
 //                        System.out.println("=========== RECVD MESSAGE: (" + avro_r.toString() + ") at offset " + avro_r.offset() + "============");
 

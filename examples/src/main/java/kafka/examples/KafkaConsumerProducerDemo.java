@@ -20,12 +20,12 @@ import java.io.*;
 import java.util.Scanner;
 
 public class KafkaConsumerProducerDemo {
-    private final int[] ITERATIONS = {10000, 100000, 1000000};
+    private final int[] ITERATIONS = {10};
 
     public static void main(String[] args) throws InterruptedException {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("Enter the mode you wish to run, Protobuf (p), Avro (a): ");
+        System.out.println("Enter the mode you wish to run, Protobuf (p), Avro (a), Cap'nProto (c): ");
         String modeResp = scanner.nextLine().toLowerCase();
         KafkaConsumerProducerDemo kafkaConsumerProducerDemo = new KafkaConsumerProducerDemo();
         for (int iterations : kafkaConsumerProducerDemo.ITERATIONS) {
@@ -39,6 +39,9 @@ public class KafkaConsumerProducerDemo {
                     kafkaConsumerProducerDemo.run(SerializerType.AVRO1, iterations);
                     kafkaConsumerProducerDemo.run(SerializerType.AVRO2, iterations);
                     kafkaConsumerProducerDemo.run(SerializerType.AVRO3, iterations);
+                    break;
+                case "c":
+                    kafkaConsumerProducerDemo.run(SerializerType.CAPNPROTO1, iterations);
                     break;
                 default:
                     System.out.println("Invalid mode entered, exiting program now ...");

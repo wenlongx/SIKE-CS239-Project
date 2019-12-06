@@ -19,6 +19,7 @@ package kafka.examples;
 
 import kafka.avro_serde.AvroSchemas;
 import kafka.avro_serde.CustomAvroSerializer;
+import kafka.capnproto_serde.CustomCapnProtoSerializer;
 import kafka.protobuf_serde.CustomProtobufSerializer;
 import kafka.protobuf_serde.generated.PbClasses;
 import org.apache.avro.generic.GenericData;
@@ -29,10 +30,14 @@ import org.apache.kafka.common.serialization.IntegerSerializer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+
+import org.capnproto.*;
+import kafka.capnproto_serde.generated.CapnProtoClasses;
 
 public class ProducerThread extends Thread {
     private Producer producer;
@@ -60,6 +65,9 @@ public class ProducerThread extends Thread {
             case PB2:
             case PB3:
                 producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomProtobufSerializer<>(serializerType, iterations));
+                break;
+            case CAPNPROTO1:
+                producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomCapnProtoSerializer(serializerType, iterations));
                 break;
         }
 
@@ -173,6 +181,18 @@ public class ProducerThread extends Thread {
                         producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(startTime, i));
                     }
                     break;
+                case CAPNPROTO1:
+                    for (int i = 0; i < this.iterations; i++) {
+                        long startTime = System.currentTimeMillis();
+                        MessageBuilder message = new MessageBuilder();
+                        CapnProtoClasses.PrimitiveMessage.Builder primitiveMessage = message.initRoot(CapnProtoClasses.PrimitiveMessage.factory);
+                        primitiveMessage.setQuery(longQuery);
+                        primitiveMessage.setTimestamp(startTime);
+                        primitiveMessage.setPageNumber(12321);
+                        primitiveMessage.setResultPerPage(i);
+
+                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(startTime, i));
+                    }
             }
 
         } catch (SerializationException | IOException e) {
@@ -209,10 +229,10 @@ class DemoCallBack implements Callback {
      */
     public void onCompletion(RecordMetadata metadata, Exception exception) {
         long elapsedTime = System.currentTimeMillis() - startTime;
-//        if (metadata != null) {
-//            System.out.println("Message " + messageNumber + " was sent and it took " + elapsedTime + " ms.");
-//        } else {
-//            exception.printStackTrace();
-//        }
+        if (metadata != null) {
+            System.out.println("Message " + messageNumber + " was sent and it took " + elapsedTime + " ms.");
+        } else {
+            exception.printStackTrace();
+        }
     }
 }

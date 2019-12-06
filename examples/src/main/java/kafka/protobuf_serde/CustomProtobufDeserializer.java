@@ -24,8 +24,9 @@ public class CustomProtobufDeserializer<T extends MessageLite> implements Deseri
     /**
      * Returns a new instance of {@link CustomProtobufDeserializer}
      *
-     * @param parser     The Protobuf {@link Parser}
-     * @param iterations The number of iterations this deserializer will run for
+     * @param parser         The Protobuf {@link Parser}
+     * @param serializerType The serializer type being used
+     * @param iterations     The number of iterations this deserializer will run for
      */
     public CustomProtobufDeserializer(Parser<T> parser, SerializerType serializerType, int iterations) {
         this.parser = parser;
