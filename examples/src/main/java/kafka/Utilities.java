@@ -4,7 +4,7 @@ import java.io.*;
 
 public final class Utilities {
 
-    public static final int BUFFER_SIZE = 10;
+    public static final int BUFFER_SIZE = 1000;
 
     public static void appendToFile(String fileName, long [] writeBuffer) {
         try {

@@ -67,7 +67,7 @@ public class ProducerThread extends Thread {
         this.serializerType = serializerType;
         this.iterations = iterations;
 
-        System.out.println("Created the producer");
+        System.out.println("Created the producer for " + this.serializerType.toString() + " with iterations: " + this.iterations);
     }
 
     @SuppressWarnings("unchecked")
@@ -209,10 +209,10 @@ class DemoCallBack implements Callback {
      */
     public void onCompletion(RecordMetadata metadata, Exception exception) {
         long elapsedTime = System.currentTimeMillis() - startTime;
-        if (metadata != null) {
-            System.out.println("Message " + messageNumber + " was sent and it took " + elapsedTime + " ms.");
-        } else {
-            exception.printStackTrace();
-        }
+//        if (metadata != null) {
+//            System.out.println("Message " + messageNumber + " was sent and it took " + elapsedTime + " ms.");
+//        } else {
+//            exception.printStackTrace();
+//        }
     }
 }

@@ -97,7 +97,7 @@ public class ConsumerThread extends ShutdownableThread {
                     ConsumerRecords<Integer, MessageLite> records = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, MessageLite> record : records) {
                         this.currIteration++;
-                        System.out.println("===========Received message: (" + record.value().toString() + ") at offset " + record.offset() + "===========");
+//                        System.out.println("===========Received message: (" + record.value().toString() + ") at offset " + record.offset() + "===========");
 
                         // Uncomment the below code if you want to print the metrics
 //                        metricMap = consumer.metrics();
@@ -114,7 +114,7 @@ public class ConsumerThread extends ShutdownableThread {
                     ConsumerRecords<Integer, GenericRecord> avro_records = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, GenericRecord> avro_r : avro_records) {
                         this.currIteration++;
-                        System.out.println("=========== RECVD MESSAGE: (" + avro_r.toString() + ") at offset " + avro_r.offset() + "============");
+//                        System.out.println("=========== RECVD MESSAGE: (" + avro_r.toString() + ") at offset " + avro_r.offset() + "============");
 
                         // Uncomment the below code if you want to print the metrics
 //                        metricMap = consumer.metrics();
