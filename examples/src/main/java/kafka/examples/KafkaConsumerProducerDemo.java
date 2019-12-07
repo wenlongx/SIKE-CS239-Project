@@ -45,6 +45,11 @@ public class KafkaConsumerProducerDemo {
                     kafkaConsumerProducerDemo.run(SerializerType.CAPNPROTO2, iterations);
                     kafkaConsumerProducerDemo.run(SerializerType.CAPNPROTO3, iterations);
                     break;
+                case "s":
+                    kafkaConsumerProducerDemo.run(SerializerType.AVRO_SCHEMAREG1, iterations);
+                    kafkaConsumerProducerDemo.run(SerializerType.AVRO_SCHEMAREG2    , iterations);
+                    kafkaConsumerProducerDemo.run(SerializerType.AVRO_SCHEMAREG3, iterations);
+                    break;
                 default:
                     System.out.println("Invalid mode entered, exiting program now ...");
             }

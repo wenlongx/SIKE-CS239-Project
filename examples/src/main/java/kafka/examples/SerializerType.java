@@ -13,5 +13,9 @@ public enum SerializerType{
     AVRO3,
     CAPNPROTO1,
     CAPNPROTO2,
-    CAPNPROTO3
+    CAPNPROTO3,
+    AVRO_SCHEMAREG1,
+    AVRO_SCHEMAREG2,
+    AVRO_SCHEMAREG3
+
 }

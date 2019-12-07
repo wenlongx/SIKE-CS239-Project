@@ -17,6 +17,8 @@
 package kafka.examples;
 
 import com.google.protobuf.MessageLite;
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import kafka.avro_serde.AvroSchemas;
 import kafka.avro_serde.CustomAvroDeserializer;
 import kafka.capnproto_serde.CustomCapnProtoDeserializer;
@@ -79,6 +81,15 @@ public class ConsumerThread extends ShutdownableThread {
             case CAPNPROTO2:
             case CAPNPROTO3:
                 consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomCapnProtoDeserializer(serializerType, iterations));
+                break;
+            case AVRO_SCHEMAREG1:
+            case AVRO_SCHEMAREG2:
+            case AVRO_SCHEMAREG3:
+                props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, IntegerDeserializer.class.getName());
+                props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class.getName());
+                props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true");
+                props.put(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://localhost:8081");
+                consumer = new KafkaConsumer<>(props);
                 break;
         }
 

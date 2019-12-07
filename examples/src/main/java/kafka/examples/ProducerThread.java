@@ -17,6 +17,8 @@
 
 package kafka.examples;
 
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
+import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import kafka.avro_serde.AvroSchemas;
 import kafka.avro_serde.CustomAvroSerializer;
 import kafka.capnproto_serde.CustomCapnProtoSerializer;
@@ -70,6 +72,14 @@ public class ProducerThread extends Thread {
             case CAPNPROTO2:
             case CAPNPROTO3:
                 producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomCapnProtoSerializer(serializerType, iterations));
+                break;
+            case AVRO_SCHEMAREG1:
+            case AVRO_SCHEMAREG2:
+            case AVRO_SCHEMAREG3:
+                props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class.getName());
+                props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
+                props.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://localhost:8081");
+                producer = new KafkaProducer<>(props);
                 break;
         }
 
