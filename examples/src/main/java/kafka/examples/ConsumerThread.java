@@ -76,6 +76,8 @@ public class ConsumerThread extends ShutdownableThread {
                 consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomProtobufDeserializer<>(PbClasses.NestedMessage.parser(), serializerType, iterations));
                 break;
             case CAPNPROTO1:
+            case CAPNPROTO2:
+            case CAPNPROTO3:
                 consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomCapnProtoDeserializer(serializerType, iterations));
                 break;
         }
@@ -130,17 +132,11 @@ public class ConsumerThread extends ShutdownableThread {
                     }
                     break;
                 case CAPNPROTO1:
+                case CAPNPROTO2:
+                case CAPNPROTO3:
                     ConsumerRecords<Integer, MessageReader> capnproto_records = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, MessageReader> record : capnproto_records) {
                         this.currIteration++;
-//                        System.out.println("=========== RECVD MESSAGE: (" + avro_r.toString() + ") at offset " + avro_r.offset() + "============");
-
-                        // Uncomment the below code if you want to print the metrics
-//                        metricMap = consumer.metrics();
-//                        for (MetricName m_name : metricMap.keySet()) {
-//                            Metric m = metricMap.get(m_name);
-//                            System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
-//                        }
                     }
                     break;
             }

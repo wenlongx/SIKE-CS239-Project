@@ -1,4 +1,4 @@
 #!/bin/bash
 
-mkdir generated
+mkdir -p generated
 capnp compile -ojava:./generated $1

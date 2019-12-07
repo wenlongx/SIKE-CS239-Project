@@ -6,6 +6,7 @@ package kafka.capnproto_serde;
 
 import com.google.protobuf.Parser;
 import kafka.Utilities;
+import kafka.capnproto_serde.generated.CapnProtoClasses;
 import kafka.examples.SerializerType;
 import kafka.protobuf_serde.CustomProtobufDeserializer;
 import org.apache.kafka.common.errors.SerializationException;

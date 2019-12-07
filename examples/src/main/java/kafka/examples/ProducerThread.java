@@ -67,6 +67,8 @@ public class ProducerThread extends Thread {
                 producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomProtobufSerializer<>(serializerType, iterations));
                 break;
             case CAPNPROTO1:
+            case CAPNPROTO2:
+            case CAPNPROTO3:
                 producer = new KafkaProducer<>(props, new IntegerSerializer(), new CustomCapnProtoSerializer(serializerType, iterations));
                 break;
         }
@@ -82,11 +84,15 @@ public class ProducerThread extends Thread {
     public void run() {
         System.out.println("Started to run the producer ...");
         List<Integer> integerArrayList = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+
+        int integerArraySize = 100;
+        int stringIntegerMapSize = 100;
+
+        for (int i = 0; i < integerArraySize; i++) {
             integerArrayList.add(i);
         }
         Map<String, Integer> stringIntegerMap = new HashMap<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < stringIntegerMapSize; i++) {
             stringIntegerMap.put("key" + i, i);
         }
 
@@ -193,6 +199,45 @@ public class ProducerThread extends Thread {
 
                         producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(startTime, i));
                     }
+                    break;
+                case CAPNPROTO2:
+                    for (int i = 0; i < this.iterations; i++) {
+                        long startTime = System.currentTimeMillis();
+                        MessageBuilder message = new MessageBuilder();
+                        CapnProtoClasses.ComplexMessage.Builder complexMessage = message.initRoot(CapnProtoClasses.ComplexMessage.factory);
+                        complexMessage.setTimestamp(startTime);
+
+                        PrimitiveList.Int.Builder intArr = complexMessage.initArr(integerArraySize);
+                        for (int j = 0; j < integerArraySize; j++) {
+                            intArr.set(j, j);
+                        }
+
+                        StructList.Builder<CapnProtoClasses.ComplexMessage.Entry.Builder> localStringIntegerMap = complexMessage.initStorage(stringIntegerMapSize);
+                        for (int j = 0; j < stringIntegerMapSize; j++){
+                            localStringIntegerMap.get(j).setKey("key" + j);
+                            localStringIntegerMap.get(j).setValue(j);
+                        }
+
+                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(startTime, i));
+                    }
+                    break;
+                case CAPNPROTO3:
+                    for (int i = 0; i < this.iterations; i++) {
+                        long startTime = System.currentTimeMillis();
+                        MessageBuilder message = new MessageBuilder();
+                        CapnProtoClasses.NestedMessage.Builder nestedMessage = message.initRoot(CapnProtoClasses.NestedMessage.factory);
+                        nestedMessage.setTimestamp(startTime);
+                        nestedMessage.setId(i);
+
+                        CapnProtoClasses.PrimitiveMessage.Builder primitiveMessage = nestedMessage.initPrimitiveMessage();
+                        primitiveMessage.setQuery(longQuery);
+                        primitiveMessage.setTimestamp(startTime);
+                        primitiveMessage.setPageNumber(12321);
+                        primitiveMessage.setResultPerPage(i);
+
+                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(startTime, i));
+                    }
+                    break;
             }
 
         } catch (SerializationException | IOException e) {

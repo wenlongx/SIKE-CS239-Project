@@ -10,3 +10,19 @@ struct PrimitiveMessage {
   pageNumber @2 :Int32;
   resultPerPage @3 :Int32;
 }
+
+struct ComplexMessage{
+    timestamp @0 :Int64;
+    storage @1 :List(Entry);
+    struct Entry{
+        key @0 :Text;
+        value @1 :Int32;
+    }
+    arr @2 :List(Int32);
+}
+
+struct NestedMessage{
+    timestamp @0 :Int64;
+    id @1 :Int32;
+    primitiveMessage @2 :PrimitiveMessage;
+}

@@ -42,6 +42,8 @@ public class KafkaConsumerProducerDemo {
                     break;
                 case "c":
                     kafkaConsumerProducerDemo.run(SerializerType.CAPNPROTO1, iterations);
+                    kafkaConsumerProducerDemo.run(SerializerType.CAPNPROTO2, iterations);
+                    kafkaConsumerProducerDemo.run(SerializerType.CAPNPROTO3, iterations);
                     break;
                 default:
                     System.out.println("Invalid mode entered, exiting program now ...");
@@ -54,6 +56,7 @@ public class KafkaConsumerProducerDemo {
             for (SerializerType serializerType : SerializerType.values()) {
                 if (
                         (modeResp.equals("p") && (serializerType == SerializerType.PB1 || serializerType == SerializerType.PB2 || serializerType == SerializerType.PB3)) ||
+                        (modeResp.equals("c") && (serializerType == SerializerType.CAPNPROTO1 || serializerType == SerializerType.CAPNPROTO2 || serializerType == SerializerType.CAPNPROTO3)) ||
                         (modeResp.equals("a") && (serializerType == SerializerType.AVRO1 || serializerType == SerializerType.AVRO2 || serializerType == SerializerType.AVRO3))) {
                     try {
                         PrintWriter pw = new PrintWriter(serializerType.toString() + "_" + iterations + "_serdes.csv");

@@ -38,7 +38,8 @@ public class CustomCapnProtoSerializer implements Serializer<MessageBuilder> {
     @Override
     public byte[] serialize(String topic, MessageBuilder data) {
 
-        ArrayOutputStream os = new ArrayOutputStream(ByteBuffer.allocate(1024));
+        // 2^17 Buffer should be enough, but change this if needed!
+        ArrayOutputStream os = new ArrayOutputStream(ByteBuffer.allocate(131072));
         try {
             long startTime = System.nanoTime();
             write(os, data);
