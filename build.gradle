@@ -911,6 +911,7 @@ project(':examples') {
     implementation "org.apache.avro:avro:1.9.1"
     implementation "com.google.protobuf:protobuf-java:3.10.0"
     implementation "org.capnproto:runtime:0.1.4"
+    implementation "org.apache.thrift:libthrift:0.13.0"
   }
 
   javadoc {

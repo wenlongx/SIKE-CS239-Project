@@ -25,7 +25,7 @@ public class KafkaConsumerProducerDemo {
     public static void main(String[] args) throws InterruptedException {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("Enter the mode you wish to run, Protobuf (p), Avro (a), Cap'nProto (c): ");
+        System.out.println("Enter the mode you wish to run, Protobuf (p), Avro (a), Cap'nProto (c), Thrift (t): ");
         String modeResp = scanner.nextLine().toLowerCase();
         KafkaConsumerProducerDemo kafkaConsumerProducerDemo = new KafkaConsumerProducerDemo();
         for (int iterations : kafkaConsumerProducerDemo.ITERATIONS) {
@@ -45,6 +45,11 @@ public class KafkaConsumerProducerDemo {
                     kafkaConsumerProducerDemo.run(SerializerType.CAPNPROTO2, iterations);
                     kafkaConsumerProducerDemo.run(SerializerType.CAPNPROTO3, iterations);
                     break;
+                case "t":
+                    kafkaConsumerProducerDemo.run(SerializerType.THRIFT1, iterations);
+                    kafkaConsumerProducerDemo.run(SerializerType.THRIFT2, iterations);
+                    kafkaConsumerProducerDemo.run(SerializerType.THRIFT3, iterations);
+                    break;
                 default:
                     System.out.println("Invalid mode entered, exiting program now ...");
             }
@@ -56,8 +61,9 @@ public class KafkaConsumerProducerDemo {
             for (SerializerType serializerType : SerializerType.values()) {
                 if (
                         (modeResp.equals("p") && (serializerType == SerializerType.PB1 || serializerType == SerializerType.PB2 || serializerType == SerializerType.PB3)) ||
-                        (modeResp.equals("c") && (serializerType == SerializerType.CAPNPROTO1 || serializerType == SerializerType.CAPNPROTO2 || serializerType == SerializerType.CAPNPROTO3)) ||
-                        (modeResp.equals("a") && (serializerType == SerializerType.AVRO1 || serializerType == SerializerType.AVRO2 || serializerType == SerializerType.AVRO3))) {
+                                (modeResp.equals("c") && (serializerType == SerializerType.CAPNPROTO1 || serializerType == SerializerType.CAPNPROTO2 || serializerType == SerializerType.CAPNPROTO3)) ||
+                                (modeResp.equals("t") && (serializerType == SerializerType.THRIFT1 || serializerType == SerializerType.THRIFT2 || serializerType == SerializerType.THRIFT3)) ||
+                                (modeResp.equals("a") && (serializerType == SerializerType.AVRO1 || serializerType == SerializerType.AVRO2 || serializerType == SerializerType.AVRO3))) {
                     try {
                         PrintWriter pw = new PrintWriter(serializerType.toString() + "_" + iterations + "_serdes.csv");
                         String serFileName = serializerType.toString() + "_" + iterations + "_ser.txt";
@@ -81,8 +87,8 @@ public class KafkaConsumerProducerDemo {
                         des.close();
                         pw.close();
 
-                        serFile.delete();
-                        deserFile.delete();
+                        boolean ignored = serFile.delete();
+                        ignored = deserFile.delete();
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     } catch (IOException e) {

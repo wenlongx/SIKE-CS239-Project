@@ -22,6 +22,7 @@ import kafka.avro_serde.CustomAvroDeserializer;
 import kafka.capnproto_serde.CustomCapnProtoDeserializer;
 import kafka.protobuf_serde.CustomProtobufDeserializer;
 import kafka.protobuf_serde.generated.PbClasses;
+import kafka.thrift_serde.CustomThriftDeserializer;
 import kafka.utils.ShutdownableThread;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.consumer.*;
@@ -30,6 +31,7 @@ import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
+import org.apache.thrift.TBase;
 import org.capnproto.MessageReader;
 
 import java.time.Duration;
@@ -80,6 +82,11 @@ public class ConsumerThread extends ShutdownableThread {
             case CAPNPROTO3:
                 consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomCapnProtoDeserializer(serializerType, iterations));
                 break;
+            case THRIFT1:
+            case THRIFT2:
+            case THRIFT3:
+                consumer = new KafkaConsumer<>(props, new IntegerDeserializer(), new CustomThriftDeserializer(serializerType, iterations));
+                break;
         }
 
         this.topic = topic;
@@ -97,7 +104,6 @@ public class ConsumerThread extends ShutdownableThread {
             Map<MetricName, Metric> metricMap = null;
 
             switch (this.serializerType) {
-                // Since the consumer is generic enough, all three PBs use the same code
                 case PB1:
                 case PB2:
                 case PB3:
@@ -114,14 +120,13 @@ public class ConsumerThread extends ShutdownableThread {
 //                        }
                     }
                     break;
-                // Since the consumer is generic enough, all three AVROs use the same code
                 case AVRO1:
                 case AVRO2:
                 case AVRO3:
-                    ConsumerRecords<Integer, GenericRecord> avro_records = consumer.poll(Duration.ofSeconds(10));
-                    for (ConsumerRecord<Integer, GenericRecord> avro_r : avro_records) {
+                    ConsumerRecords<Integer, GenericRecord> avroRecords = consumer.poll(Duration.ofSeconds(10));
+                    for (ConsumerRecord<Integer, GenericRecord> record : avroRecords) {
                         this.currIteration++;
-//                        System.out.println("=========== RECVD MESSAGE: (" + avro_r.toString() + ") at offset " + avro_r.offset() + "============");
+//                        System.out.println("=========== RECVD MESSAGE: (" + record.value().toString() + ") at offset " + record.offset() + "============");
 
                         // Uncomment the below code if you want to print the metrics
 //                        metricMap = consumer.metrics();
@@ -134,15 +139,26 @@ public class ConsumerThread extends ShutdownableThread {
                 case CAPNPROTO1:
                 case CAPNPROTO2:
                 case CAPNPROTO3:
-                    ConsumerRecords<Integer, MessageReader> capnproto_records = consumer.poll(Duration.ofSeconds(10));
-                    for (ConsumerRecord<Integer, MessageReader> record : capnproto_records) {
+                    ConsumerRecords<Integer, MessageReader> capnprotoRecords = consumer.poll(Duration.ofSeconds(10));
+                    for (ConsumerRecord<Integer, MessageReader> record : capnprotoRecords) {
                         this.currIteration++;
+//                        System.out.println("=========== RECVD MESSAGE: (" + record.value().toString() + ") at offset " + record.offset() + "============");
+                    }
+                    break;
+                case THRIFT1:
+                case THRIFT2:
+                case THRIFT3:
+                    ConsumerRecords<Integer, TBase> thriftRecords = consumer.poll(Duration.ofSeconds(10));
+                    for (ConsumerRecord<Integer, TBase> record : thriftRecords) {
+                        this.currIteration++;
+//                        System.out.println("=========== RECVD MESSAGE: (" + record.value().toString() + ") at offset " + record.offset() + "============");
                     }
                     break;
             }
         } catch (WakeupException e) {
             // Ignore for shutdown
         } catch (SerializationException s) {
+            s.printStackTrace();
             System.out.println("Caught a deserialization exception");
         } finally {
             // Close the consumer and shutdown the thread
