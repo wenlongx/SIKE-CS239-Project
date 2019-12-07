@@ -4,7 +4,7 @@
 
 package kafka.examples;
 
-public enum SerializerType{
+public enum SerializerType {
     PB1,
     PB2,
     PB3,
@@ -16,6 +16,8 @@ public enum SerializerType{
     CAPNPROTO3,
     AVRO_SCHEMAREG1,
     AVRO_SCHEMAREG2,
-    AVRO_SCHEMAREG3
-
+    AVRO_SCHEMAREG3,
+    THRIFT1,
+    THRIFT2,
+    THRIFT3
 }
