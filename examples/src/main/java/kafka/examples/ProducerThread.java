@@ -368,13 +368,11 @@ class DemoCallBack implements Callback {
 
     public HashMap<String, String> metricsFromProducer(Map<MetricName, Metric> metricMap) {
         HashMap<String, String> metrics = new HashMap<String, String>();
-        System.out.println("==============================");
         // Loop through all the metrics we record (can't just look it up bc it looks it up by an object reference)
         for (MetricName m_name : metricMap.keySet()) {
             Metric m = metricMap.get(m_name);
 
             if (this.producerMetricsToRecord.contains(m.metricName().name())) {
-                System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString() + ": \t" + m.metricName().group() + ": \t" + m.metricName().description() + ": \t" + m.metricName().tags());
                 // batch-size-avg
                 if ((m.metricName().name().equals("batch-size-avg")) ||
                         // record-send-rate
@@ -422,7 +420,7 @@ class DemoCallBack implements Callback {
         Utilities.appendStringToFile(this.metricsFilename, result);
 
         if (metadata != null) {
-            System.out.println("Message " + messageNumber + " was sent and it took " + elapsedTime + " ns.");
+//            System.out.println("Message " + messageNumber + " was sent and it took " + elapsedTime + " ns.");
         } else {
             exception.printStackTrace();
         }
