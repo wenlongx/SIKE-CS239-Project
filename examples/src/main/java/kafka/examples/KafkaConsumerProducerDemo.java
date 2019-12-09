@@ -20,7 +20,7 @@ import java.io.*;
 import java.util.Scanner;
 
 public class KafkaConsumerProducerDemo {
-    private final int[] ITERATIONS = {1000};
+    private final int[] ITERATIONS = {10};
 
     public static void main(String[] args) throws InterruptedException {
         Scanner scanner = new Scanner(System.in);

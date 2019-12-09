@@ -17,6 +17,7 @@
 package kafka.examples;
 
 import com.google.protobuf.MessageLite;
+import kafka.Utilities;
 import kafka.avro_serde.AvroSchemas;
 import kafka.avro_serde.CustomAvroDeserializer;
 import kafka.protobuf_serde.CustomProtobufDeserializer;
@@ -30,10 +31,10 @@ import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 
+import java.io.File;
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ConsumerThread extends ShutdownableThread {
     private Consumer consumer;
@@ -41,6 +42,15 @@ public class ConsumerThread extends ShutdownableThread {
     private final SerializerType serializerType;
     private final int iterations;
     private int currIteration;
+    private String filename;
+
+    private List<String> consumerMetricsToRecord = Arrays.asList(
+            "records-consumed-rate",
+            "records-lag-max",
+            "outgoing-byte-rate",
+            "request-rate",
+            "records-lag-avg"
+    );
 
     public ConsumerThread(String topic, SerializerType serializerType, int iterations) {
         super("KafkaConsumerExample", true);
@@ -53,6 +63,13 @@ public class ConsumerThread extends ShutdownableThread {
         // TODO: Check what this one actually does. I am a bit dubious about it -- Sahil
         // Apparently it must be >= 6000 since that is the zookeeper connection timeout
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "10000");
+
+        // Clear previous results
+        this.filename = serializerType.toString() + "_" + iterations + "_consumermetrics.txt";
+//        File consumermetrics = new File(this.filename);
+//        if (consumermetrics.exists()) {
+//            consumermetrics.delete();
+//        }
 
         switch (serializerType) {
             case AVRO1:
@@ -82,12 +99,48 @@ public class ConsumerThread extends ShutdownableThread {
         System.out.println("Starting the consumer ...");
     }
 
+    public HashMap<String, String> metricsFromRecord(Map<MetricName, Metric> metricMap) {
+        HashMap<String, String> metrics = new HashMap<String, String>();
+
+        // Loop through all the metrics we record (can't just look it up bc it looks it up by an object reference)
+        for (MetricName m_name : metricMap.keySet()) {
+            Metric m = metricMap.get(m_name);
+
+            if (consumerMetricsToRecord.contains(m.metricName().name())) {
+
+                // records-lag-max
+                if ((m.metricName().name().equals("records-lag-max") && !m.metricName().tags().containsKey("partition")) ||
+                        // outgoing-byte-rate
+                        (m.metricName().name().equals("outgoing-byte-rate") && m.metricName().group().equals("consumer-metrics")) ||
+                        // records-lag-avg
+                        (m.metricName().name().equals("records-lag-avg")) ||
+                        // request-rate
+                        (m.metricName().name().equals("request-rate") && m.metricName().group().equals("consumer-metrics")) ||
+                        // records-consumed-rate
+                        (m.metricName().name().equals("records-consumed-rate") && !m.metricName().tags().containsKey("topic"))
+
+                ) {
+                    metrics.put(m.metricName().name().toString(), m.metricValue().toString());
+                }
+                else {
+                    // do nothing
+                }
+
+//                System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString() + ": \t" + m.metricName().group() + ": \t" + m.metricName().description() + ": \t" + m.metricName().tags());
+//                System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString() + " \t" + m.toString());
+            }
+        }
+
+        return metrics;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public void doWork() {
         try {
             consumer.subscribe(Collections.singletonList(this.topic));
             Map<MetricName, Metric> metricMap = null;
+            ArrayList<HashMap<String, String>> allMetrics = new ArrayList<HashMap<String, String>>();
 
             switch (this.serializerType) {
                 // Since the consumer is generic enough, all three PBs use the same code
@@ -99,32 +152,36 @@ public class ConsumerThread extends ShutdownableThread {
                         this.currIteration++;
 //                        System.out.println("===========Received message: (" + record.value().toString() + ") at offset " + record.offset() + "===========");
 
-                        // Uncomment the below code if you want to print the metrics
-//                        metricMap = consumer.metrics();
-//                        for (MetricName m_name : metricMap.keySet()) {
-//                            Metric m = metricMap.get(m_name);
-//                            System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
-//                        }
+                        metricMap = consumer.metrics();
+                        HashMap<String, String> metrics = this.metricsFromRecord(metricMap);
+                        allMetrics.add(metrics);
                     }
+
                     break;
                 // Since the consumer is generic enough, all three AVROs use the same code
                 case AVRO1:
                 case AVRO2:
                 case AVRO3:
-                    ConsumerRecords<Integer, GenericRecord> avro_records = consumer.poll(Duration.ofSeconds(10));
-                    for (ConsumerRecord<Integer, GenericRecord> avro_r : avro_records) {
+                    ConsumerRecords<Integer, GenericRecord> avroRecords = consumer.poll(Duration.ofSeconds(10));
+                    for (ConsumerRecord<Integer, GenericRecord> record : avroRecords) {
                         this.currIteration++;
-//                        System.out.println("=========== RECVD MESSAGE: (" + avro_r.toString() + ") at offset " + avro_r.offset() + "============");
+//                        System.out.println("===========Received message: (" + record.value().toString() + ") at offset " + record.offset() + "===========");
 
-                        // Uncomment the below code if you want to print the metrics
-//                        metricMap = consumer.metrics();
-//                        for (MetricName m_name : metricMap.keySet()) {
-//                            Metric m = metricMap.get(m_name);
-//                            System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
-//                        }
+                        metricMap = consumer.metrics();
+                        HashMap<String, String> metrics = this.metricsFromRecord(metricMap);
+                        allMetrics.add(metrics);
                     }
-                    break;
             }
+
+            // Write the per-record metrics to a file
+            for (HashMap<String, String> recordMetrics : allMetrics) {
+                // This converts the map into a json object
+                String result = "{" + recordMetrics.entrySet().stream()
+                        .map(e -> "\"" + e.getKey() + "\":" + e.getValue())
+                        .collect(Collectors.joining(",")) + "}";
+                Utilities.appendStringToFile(this.filename, result);
+            }
+
         } catch (WakeupException e) {
             // Ignore for shutdown
         } catch (SerializationException s) {
