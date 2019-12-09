@@ -120,7 +120,7 @@ public class ProducerThread extends Thread {
                         builder.setResultPerPage(i);
                         PbClasses.PrimitiveMessage primitiveMessage = builder.build();
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, primitiveMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.filename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, primitiveMessage), new DemoCallBack(startTime, i));
                     }
                     break;
                 case PB2:
@@ -133,7 +133,7 @@ public class ProducerThread extends Thread {
                         builder.putAllStorage(stringIntegerMap);
                         PbClasses.ComplexMessage complexMessage = builder.build();
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, complexMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.filename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, complexMessage), new DemoCallBack(startTime, i));
                     }
                     break;
                 case PB3:
@@ -146,7 +146,7 @@ public class ProducerThread extends Thread {
                         builder.setPrimitiveMsg(PbClasses.PrimitiveMessage.newBuilder().setQuery("hello there").setPageNumber(12321).setResultPerPage(i).build());
                         PbClasses.NestedMessage nestedMessage = builder.build();
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, nestedMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.filename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, nestedMessage), new DemoCallBack(startTime, i));
                     }
                     break;
 
@@ -162,7 +162,7 @@ public class ProducerThread extends Thread {
                         record.put("timestamp", startTime);
                         record.put("result_per_page", i);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(producer, this.producerMetricsToRecord, this.filename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(startTime, i));
                     }
                     break;
                 case AVRO2:
@@ -174,7 +174,7 @@ public class ProducerThread extends Thread {
                         record.put("arr", integerArrayList);
                         record.put("storage", stringIntegerMap);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(producer, this.producerMetricsToRecord, this.filename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(startTime, i));
                     }
                     break;
                 case AVRO3:
@@ -191,7 +191,7 @@ public class ProducerThread extends Thread {
                         record.put("id", i);
                         record.put("primitiveMsg", primitiveMessage);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(producer, this.producerMetricsToRecord, this.filename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(startTime, i));
                     }
                     break;
             }
@@ -213,52 +213,9 @@ class DemoCallBack implements Callback {
     private final long startTime;
     private final int messageNumber;
 
-    Producer producer;
-    List<String> producerMetricsToRecord;
-    String filename;
-
-    public DemoCallBack(Producer producer, List<String> producerMetricsToRecord, String filename, long startTime, int messageNumber) {
+    public DemoCallBack(long startTime, int messageNumber) {
         this.startTime = startTime;
         this.messageNumber = messageNumber;
-
-        this.producer = producer;
-        this.producerMetricsToRecord = producerMetricsToRecord;
-        this.filename = filename;
-    }
-
-    public HashMap<String, String> metricsFromProducer(Map<MetricName, Metric> metricMap) {
-        HashMap<String, String> metrics = new HashMap<String, String>();
-
-        // Loop through all the metrics we record (can't just look it up bc it looks it up by an object reference)
-        for (MetricName m_name : metricMap.keySet()) {
-            Metric m = metricMap.get(m_name);
-
-            if (producerMetricsToRecord.contains(m.metricName().name())) {
-
-                // records-lag-max
-                if ((m.metricName().name().equals("records-lag-max") && !m.metricName().tags().containsKey("partition")) ||
-                        // outgoing-byte-rate
-                        (m.metricName().name().equals("outgoing-byte-rate") && m.metricName().group().equals("consumer-metrics")) ||
-                        // records-lag-avg
-                        (m.metricName().name().equals("records-lag-avg")) ||
-                        // request-rate
-                        (m.metricName().name().equals("request-rate") && m.metricName().group().equals("consumer-metrics")) ||
-                        // records-consumed-rate
-                        (m.metricName().name().equals("records-consumed-rate") && !m.metricName().tags().containsKey("topic"))
-
-                ) {
-                    metrics.put(m.metricName().name().toString(), m.metricValue().toString());
-                }
-                else {
-                    // do nothing
-                }
-
-//                System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString() + ": \t" + m.metricName().group() + ": \t" + m.metricName().description() + ": \t" + m.metricName().tags());
-//                System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString() + " \t" + m.toString());
-            }
-        }
-
-        return metrics;
     }
 
     /**
@@ -274,16 +231,6 @@ class DemoCallBack implements Callback {
     @SuppressWarnings("unchecked")
     public void onCompletion(RecordMetadata metadata, Exception exception) {
         long elapsedTime = System.currentTimeMillis() - startTime;
-
-        // Write producer metrics
-        Map<MetricName, Metric> metricMap = this.producer.metrics();
-        HashMap<String, String> metrics = this.metricsFromProducer(metricMap);
-
-        // This converts the map into a json object
-        String result = "{" + metrics.entrySet().stream()
-                .map(e -> "\"" + e.getKey() + "\":" + e.getValue())
-                .collect(Collectors.joining(",")) + "}";
-        Utilities.appendStringToFile(this.filename, result);
 
         if (metadata != null) {
 //            System.out.println("Message " + messageNumber + " was sent and it took " + elapsedTime + " ms.");
