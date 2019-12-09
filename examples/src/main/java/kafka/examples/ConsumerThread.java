@@ -19,6 +19,7 @@ package kafka.examples;
 import com.google.protobuf.MessageLite;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
+import kafka.Utilities;
 import kafka.avro_serde.AvroSchemas;
 import kafka.avro_serde.CustomAvroDeserializer;
 import kafka.capnproto_serde.CustomCapnProtoDeserializer;
@@ -36,10 +37,10 @@ import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.thrift.TBase;
 import org.capnproto.MessageReader;
 
+import java.io.File;
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ConsumerThread extends ShutdownableThread {
     private Consumer consumer;
@@ -47,6 +48,15 @@ public class ConsumerThread extends ShutdownableThread {
     private final SerializerType serializerType;
     private final int iterations;
     private int currIteration;
+    private String metricsFilename;
+
+    private List<String> consumerMetricsToRecord = Arrays.asList(
+            "records-consumed-rate",
+            "records-lag-max",
+            "outgoing-byte-rate",
+            "request-rate",
+            "records-lag-avg"
+    );
 
     public ConsumerThread(String topic, SerializerType serializerType, int iterations) {
         super("KafkaConsumerExample", true);
@@ -59,6 +69,13 @@ public class ConsumerThread extends ShutdownableThread {
         // TODO: Check what this one actually does. I am a bit dubious about it -- Sahil
         // Apparently it must be >= 6000 since that is the zookeeper connection timeout
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "10000");
+
+        // Clear previous results
+        this.metricsFilename = serializerType.toString() + "_" + iterations + "_consumermetrics.txt";
+        File consumermetrics = new File(this.metricsFilename);
+        if (consumermetrics.exists()) {
+            consumermetrics.delete();
+        }
 
         switch (serializerType) {
             case AVRO1:
@@ -107,12 +124,45 @@ public class ConsumerThread extends ShutdownableThread {
         System.out.println("Starting the consumer ...");
     }
 
+    public HashMap<String, String> metricsFromRecord(Map<MetricName, Metric> metricMap) {
+        HashMap<String, String> metrics = new HashMap<String, String>();
+
+        // Loop through all the metrics we record (can't just look it up bc it looks it up by an object reference)
+        for (MetricName m_name : metricMap.keySet()) {
+            Metric m = metricMap.get(m_name);
+
+            if (consumerMetricsToRecord.contains(m.metricName().name())) {
+
+                // records-lag-max
+                if ((m.metricName().name().equals("records-lag-max") && !m.metricName().tags().containsKey("partition")) ||
+                        // outgoing-byte-rate
+                        (m.metricName().name().equals("outgoing-byte-rate") && m.metricName().group().equals("consumer-metrics")) ||
+                        // records-lag-avg
+                        (m.metricName().name().equals("records-lag-avg")) ||
+                        // request-rate
+                        (m.metricName().name().equals("request-rate") && m.metricName().group().equals("consumer-metrics")) ||
+                        // records-consumed-rate
+                        (m.metricName().name().equals("records-consumed-rate") && !m.metricName().tags().containsKey("topic"))
+
+                ) {
+                    metrics.put(m.metricName().name().toString(), m.metricValue().toString());
+                }
+                else {
+                    // do nothing
+                }
+            }
+        }
+
+        return metrics;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public void doWork() {
         try {
             consumer.subscribe(Collections.singletonList(this.topic));
             Map<MetricName, Metric> metricMap = null;
+            ArrayList<HashMap<String, String>> allMetrics = new ArrayList<HashMap<String, String>>();
 
             switch (this.serializerType) {
                 case PB1:
@@ -121,14 +171,9 @@ public class ConsumerThread extends ShutdownableThread {
                     ConsumerRecords<Integer, MessageLite> records = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, MessageLite> record : records) {
                         this.currIteration++;
-//                        System.out.println("===========Received message: (" + record.value().toString() + ") at offset " + record.offset() + "===========");
-
-                        // Uncomment the below code if you want to print the metrics
-//                        metricMap = consumer.metrics();
-//                        for (MetricName m_name : metricMap.keySet()) {
-//                            Metric m = metricMap.get(m_name);
-//                            System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
-//                        }
+                        metricMap = consumer.metrics();
+                        HashMap<String, String> metrics = this.metricsFromRecord(metricMap);
+                        allMetrics.add(metrics);
                     }
                     break;
                 case AVRO_SCHEMAREG1:
@@ -140,14 +185,9 @@ public class ConsumerThread extends ShutdownableThread {
                     ConsumerRecords<Integer, GenericRecord> avroRecords = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, GenericRecord> record : avroRecords) {
                         this.currIteration++;
-//                        System.out.println("=========== RECVD MESSAGE: (" + record.value().toString() + ") at offset " + record.offset() + "============");
-
-                        // Uncomment the below code if you want to print the metrics
-//                        metricMap = consumer.metrics();
-//                        for (MetricName m_name : metricMap.keySet()) {
-//                            Metric m = metricMap.get(m_name);
-//                            System.out.println(m.metricName().name() + ": \t" + m.metricValue().toString());
-//                        }
+                        metricMap = consumer.metrics();
+                        HashMap<String, String> metrics = this.metricsFromRecord(metricMap);
+                        allMetrics.add(metrics);
                     }
                     break;
                 case CAPNPROTO1:
@@ -156,7 +196,9 @@ public class ConsumerThread extends ShutdownableThread {
                     ConsumerRecords<Integer, MessageReader> capnprotoRecords = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, MessageReader> record : capnprotoRecords) {
                         this.currIteration++;
-//                        System.out.println("=========== RECVD MESSAGE: (" + record.value().toString() + ") at offset " + record.offset() + "============");
+                        metricMap = consumer.metrics();
+                        HashMap<String, String> metrics = this.metricsFromRecord(metricMap);
+                        allMetrics.add(metrics);
                     }
                     break;
                 case THRIFT1:
@@ -165,9 +207,20 @@ public class ConsumerThread extends ShutdownableThread {
                     ConsumerRecords<Integer, TBase> thriftRecords = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, TBase> record : thriftRecords) {
                         this.currIteration++;
-//                        System.out.println("=========== RECVD MESSAGE: (" + record.value().toString() + ") at offset " + record.offset() + "============");
+                        metricMap = consumer.metrics();
+                        HashMap<String, String> metrics = this.metricsFromRecord(metricMap);
+                        allMetrics.add(metrics);
                     }
                     break;
+            }
+
+            // Write the per-record metrics to a file
+            for (HashMap<String, String> recordMetrics : allMetrics) {
+                // This converts the map into a json object
+                String result = "{" + recordMetrics.entrySet().stream()
+                        .map(e -> "\"" + e.getKey() + "\":" + e.getValue())
+                        .collect(Collectors.joining(",")) + "}";
+                Utilities.appendStringToFile(this.metricsFilename, result);
             }
         } catch (WakeupException e) {
             // Ignore for shutdown
