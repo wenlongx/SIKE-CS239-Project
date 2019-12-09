@@ -5,7 +5,6 @@
 package kafka.protobuf_serde;
 
 import com.google.protobuf.MessageLite;
-import com.google.protobuf.Parser;
 import kafka.Utilities;
 import kafka.examples.SerializerType;
 import org.apache.kafka.common.serialization.Serializer;
@@ -21,7 +20,8 @@ public class CustomProtobufSerializer<T extends MessageLite> implements Serializ
     /**
      * Returns a new instance of {@link CustomProtobufSerializer}
      *
-     * @param iterations The number of iterations this serializer will run for
+     * @param serializerType The serializer type being used
+     * @param iterations     The number of iterations this serializer will run for
      */
     public CustomProtobufSerializer(SerializerType serializerType, int iterations) {
         this.serializedTimes = new long[BUFFER_SIZE];

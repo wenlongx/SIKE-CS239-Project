@@ -1,0 +1,70 @@
+#!/bin/bash
+# (Copyright) [2019 - 2019] Confluent, Inc.
+
+#
+# Use shellcheck to lint this file
+#
+set -ue
+
+#cd -P deals with symlink from /bin to /usr/bin
+base_dir=$( cd -P "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )
+
+usage() {
+  echo "$(basename "$0")": ERROR: "$*" 1>&2
+  exit 1
+}
+
+user_name=""
+props_file=""
+auth_file=""
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -u|--username)
+    user_name="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -c|--config)
+    props_file="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -a|--authentication)
+    auth_file="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    *)
+       echo $"Usage: $0 {-u|--username} user_name {-c|--config} config_file {-a|--authentication} auth_file"
+       exit 1
+esac
+done
+
+if [ -z "$user_name" ]
+then
+  user_name=kafkaclient
+  echo "Input username is missing. Using default username as kafkaclient."
+fi
+
+if [ -z "$props_file" ]
+then
+  usage "Properties file is required"
+fi
+
+if [ -z "$auth_file" ]
+then
+  usage "Authentication file file is required"
+fi
+
+echo user_name="$user_name"
+echo props_file="$props_file"
+echo auth_file="$auth_file"
+
+bin_dir=$(dirname "$0")
+
+# disable default log configuration
+export CONTROL_CENTER_OPTS="-Dlog4j.defaultInitOverride=true"
+"$bin_dir"/control-center-run-class -Djava.security.auth.login.config="$auth_file" -Dlog4j.configuration="$base_dir"/acl/src/main/resources/log4j.properties io.confluent.controlcenter.acl.StartupAcl -c3Username "$user_name" -config "$props_file" > /dev/null 2>&1 || echo "Failed"

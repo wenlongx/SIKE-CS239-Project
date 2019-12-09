@@ -29,8 +29,9 @@ public class CustomAvroDeserializer implements Deserializer<GenericRecord> {
     /**
      * Returns a new instance of {@link CustomAvroDeserializer}
      *
-     * @param schema     The AVRO {@link Schema}
-     * @param iterations The number of iterations this deserializer will run for
+     * @param schema         The AVRO {@link Schema}
+     * @param serializerType The serializer type being used
+     * @param iterations     The number of iterations this deserializer will run for
      */
     public CustomAvroDeserializer(Schema schema, SerializerType serializerType, int iterations) {
         this.datumReader = new GenericDatumReader<>(schema);

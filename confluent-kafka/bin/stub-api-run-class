@@ -1,0 +1,109 @@
+#!/bin/bash
+#
+# (Copyright) Confluent, Inc.
+#
+
+base_dir=$(dirname $0)/..
+
+# Development jars. `mvn package` should collect all the required dependency jars here
+for dir in $base_dir/rbac-api-server/target/rbac-api-server-*-stub-mds-development; do
+  CLASSPATH=$CLASSPATH:$dir/share/java/confluent-metadata-service/*
+done
+
+# Grab the Test Classes to get Swagger
+CLASSPATH=$CLASSPATH:`ls $base_dir/rbac-api-server/target/rbac-api-server-*-SNAPSHOT.jar`
+CLASSPATH=$CLASSPATH:`ls $base_dir/rbac-api-server/target/rbac-api-server-*-SNAPSHOT-tests.jar`
+CLASSPATH=$CLASSPATH:`ls $base_dir/rbac-api-spec/target/rbac-api-spec-*-SNAPSHOT.jar`
+
+# logj4 settings
+if [ "x$RBACAPI_LOG4J_OPTS" = "x" ]; then
+  # Test for files from dev -> packages so this will work as expected in dev if you have packages
+  # installed
+  if [ -e "$base_dir/config/log4j.properties" ]; then # Dev environment
+    RBACAPI_LOG4J_OPTS="-Dlog4j.configuration=file:$base_dir/config/log4j.properties"
+  elif [ -e "$base_dir/etc/rbac-api/log4j.properties" ]; then # Simple zip file layout
+    RBACAPI_LOG4J_OPTS="-Dlog4j.configuration=file:$base_dir/etc/rbac-api/log4j.properties"
+  elif [ -e "/etc/rbac-api/log4j.properties" ]; then # Normal install layout
+    RBACAPI_LOG4J_OPTS="-Dlog4j.configuration=file:/etc/rbac-api/log4j.properties"
+  fi
+fi
+
+
+LOG_DIR=${base_dir}/rbac-api-server/target
+
+echo
+echo LOG_DIR is $LOG_DIR
+echo
+
+
+
+if [[ -n $LOG_DIR ]]; then
+    [[ -d $LOG_DIR ]] || mkdir -p "$LOG_DIR"
+    RBACAPI_LOG4J_OPTS="-Drbac-api.log.dir=$LOG_DIR ${RBACAPI_LOG4J_OPTS}"
+fi
+
+# JMX settings
+if [ -z "$RBACAPI_JMX_OPTS" ]; then
+  RBACAPI_JMX_OPTS="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false "
+fi
+
+# JMX port to use
+if [  $JMX_PORT ]; then
+  RBACAPI_JMX_OPTS="$RBACAPI_JMX_OPTS -Dcom.sun.management.jmxremote.port=$JMX_PORT "
+fi
+
+# Generic jvm settings you want to add
+if [ -z "$RBACAPI_OPTS" ]; then
+  RBACAPI_OPTS=""
+fi
+
+# Which java to use
+if [ -z "$JAVA_HOME" ]; then
+  JAVA="java"
+else
+  JAVA="$JAVA_HOME/bin/java"
+fi
+
+# Memory options
+if [ -z "$RBACAPI_HEAP_OPTS" ]; then
+  RBACAPI_HEAP_OPTS="-Xmx256M"
+fi
+
+# JVM performance options
+if [ -z "$RBACAPI_JVM_PERFORMANCE_OPTS" ]; then
+  RBACAPI_JVM_PERFORMANCE_OPTS="-server -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+ExplicitGCInvokesConcurrent -Djava.awt.headless=true"
+fi
+
+MAIN=$1
+shift
+
+while [ $# -gt 0 ]; do
+  COMMAND=$1
+  case $COMMAND in
+    -help)
+      HELP="true"
+      shift
+      ;;
+    -daemon)
+      DAEMON_MODE="true"
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+if [ "x$HELP" = "xtrue" ]; then
+  echo "USAGE: $0 [-daemon] [opts] [-help]"
+  exit 0
+fi
+
+echo Classpath is $CLASSPATH
+
+# Launch mode
+if [ "x$DAEMON_MODE" = "xtrue" ]; then
+  nohup $JAVA $RBACAPI_HEAP_OPTS $RBACAPI_JVM_PERFORMANCE_OPTS $RBACAPI_JMX_OPTS $RBACAPI_LOG4J_OPTS -cp $CLASSPATH $RBACAPI_OPTS "$MAIN" "$@" 2>&1 < /dev/null &
+else
+  exec $JAVA $RBACAPI_HEAP_OPTS $RBACAPI_JVM_PERFORMANCE_OPTS $RBACAPI_JMX_OPTS $RBACAPI_LOG4J_OPTS -cp $CLASSPATH $RBACAPI_OPTS "$MAIN" "$@"
+fi
