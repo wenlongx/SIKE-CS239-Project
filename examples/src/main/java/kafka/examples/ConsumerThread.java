@@ -41,6 +41,9 @@ import java.io.File;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Properties;
 
 public class ConsumerThread extends ShutdownableThread {
     private Consumer consumer;
@@ -48,7 +51,7 @@ public class ConsumerThread extends ShutdownableThread {
     private final SerializerType serializerType;
     private final int iterations;
     private int currIteration;
-    private String filename;
+    private String metricsFilename;
 
     private List<String> consumerMetricsToRecord = Arrays.asList(
             "records-consumed-rate",
@@ -71,11 +74,11 @@ public class ConsumerThread extends ShutdownableThread {
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "10000");
 
         // Clear previous results
-        this.filename = serializerType.toString() + "_" + iterations + "_consumermetrics.txt";
-//        File consumermetrics = new File(this.filename);
-//        if (consumermetrics.exists()) {
-//            consumermetrics.delete();
-//        }
+        this.metricsFilename = serializerType.toString() + "_" + iterations + "_consumermetrics.txt";
+        File consumermetrics = new File(this.metricsFilename);
+        if (consumermetrics.exists()) {
+            consumermetrics.delete();
+        }
 
         switch (serializerType) {
             case AVRO1:
@@ -229,7 +232,7 @@ public class ConsumerThread extends ShutdownableThread {
                 String result = "{" + recordMetrics.entrySet().stream()
                         .map(e -> "\"" + e.getKey() + "\":" + e.getValue())
                         .collect(Collectors.joining(",")) + "}";
-                Utilities.appendStringToFile(this.filename, result);
+                Utilities.appendStringToFile(this.metricsFilename, result);
             }
 
         } catch (WakeupException e) {
