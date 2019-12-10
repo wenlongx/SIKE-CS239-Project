@@ -8,7 +8,7 @@ Kaushik Mahorker
 
 We are testing the performance of different serialization methods as they apply to a distributed setting. To run these tests we chose Kafka because it has an extensible serialization interface (SerDe).
 
-# Starting Kafka and Zookeeper
+# Starting Kafka, Zookeeper and Schema Registry
 
 Before running any example, open up 3 terminals (or tmux) and run the following commands to start the Kafka server, Zookeeper, and Schema Registry
 

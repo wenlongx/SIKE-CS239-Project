@@ -61,3 +61,9 @@ clients/src/generated-test
 examples/src/main/java/kafka/protobuf_serde/generated/
 *.csv
 *.txt
+
+confluent-kafka/bin
+confluent-kafka/logs
+confluent-kafka/lib
+confluent-kafka/share
+confluent-kafka/src
