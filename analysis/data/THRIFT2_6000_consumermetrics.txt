@@ -1,0 +1,6 @@
+{"request-rate":0.7624983423949078,"records-lag-max":0.0,"records-lag-avg":0.0,"records-consumed-rate":34.88178765005154,"outgoing-byte-rate":63.71833974273969}
+{"request-rate":0.9899683210137276,"records-lag-max":552.0,"records-lag-avg":27.6,"records-consumed-rate":51.76579618045212,"outgoing-byte-rate":85.83025343189018}
+{"request-rate":1.0541226076358006,"records-lag-max":552.0,"records-lag-avg":26.26086956521739,"records-consumed-rate":100.47578140487677,"outgoing-byte-rate":92.07102151068946}
+{"request-rate":1.1503697617091209,"records-lag-max":552.0,"records-lag-avg":23.23076923076923,"records-consumed-rate":134.83220149007715,"outgoing-byte-rate":101.43307914804102}
+{"request-rate":1.2112085897603773,"records-lag-max":552.0,"records-lag-avg":25.4,"records-consumed-rate":164.1330400236399,"outgoing-byte-rate":107.37200471389289}
+{"request-rate":1.2756770901478478,"records-lag-max":552.0,"records-lag-avg":23.8125,"records-consumed-rate":196.84393556641842,"outgoing-byte-rate":113.6333900300929}
