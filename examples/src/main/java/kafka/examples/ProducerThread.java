@@ -241,6 +241,22 @@ public class ProducerThread extends Thread {
                     }
                     break;
                 case AVRO_SCHEMAREG3:
+                    for (int i = 0; i < this.iterations; i++) {
+                        long startTime = System.nanoTime();
+//                        kafka.PrimitiveMessage pm = ;
+                        kafka.NestedMessage nm = kafka.NestedMessage.newBuilder()
+                                .setTimestamp(startTime)
+                                .setId(i)
+                                .setPrimitiveMsg(kafka.PrimitiveMessage.newBuilder()
+                                        .setQuery("Hello there")
+                                        .setPageNumber(12321)
+                                        .setResultPerPage(i)
+                                        .build())
+                                .build();
+                        producer.send(new ProducerRecord<>(this.topic, 5, nm), new DemoCallBack(producer, this.metricsCounter, startTime, i));
+
+                    }
+                    break;
                 case AVRO3:
                     for (int i = 0; i < this.iterations; i++) {
                         long startTime = System.nanoTime();
@@ -255,6 +271,9 @@ public class ProducerThread extends Thread {
 //                        Schema.Parser parser = new Schema.Parser();
 //                        Schema schema = parser.parse(str_schema);
                         GenericRecord record = new GenericData.Record(AvroSchemas.nestedMessageSchema);
+//                        List<GenericRecord>  innerList = new ArrayList<>();
+//                        innerList.add(primitiveMessage);
+//                        GenericData.Array<GenericRecord> genericDataArray = new GenericData.Array<GenericRecord>(AvroSchemas.primitiveMessageSchema, innerList);
                         record.put("timestamp", startTime);
                         record.put("id", i);
                         record.put("primitiveMsg", primitiveMessage);
