@@ -19,6 +19,7 @@ package kafka.examples;
 import com.google.protobuf.MessageLite;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
+import kafka.NestedMessage;
 import kafka.Utilities;
 import kafka.avro_serde.AvroSchemas;
 import kafka.avro_serde.CustomAvroDeserializer;
@@ -178,9 +179,19 @@ public class ConsumerThread extends ShutdownableThread {
                         }
                     }
                     break;
+
+                case AVRO_SCHEMAREG3:
+                    ConsumerRecords<Integer, kafka.NestedMessage> avroSRRecords = consumer.poll(Duration.ofSeconds(10));
+                    for (ConsumerRecord<Integer, kafka.NestedMessage> record : avroSRRecords) {
+                        this.currIteration++;
+                        if (currIteration % Utilities.METRICS_INTERVAL == 0) {
+                            metricMap = consumer.metrics();
+                            metrics = this.metricsFromRecord(metricMap);
+                        }
+                    }
+                    break;
                 case AVRO_SCHEMAREG1:
                 case AVRO_SCHEMAREG2:
-                case AVRO_SCHEMAREG3:
                 case AVRO1:
                 case AVRO2:
                 case AVRO3:

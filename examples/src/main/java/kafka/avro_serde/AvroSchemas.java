@@ -28,4 +28,14 @@ public class AvroSchemas {
             .optionalInt("id")
             .name("primitiveMsg").type(primitiveMessageSchema).noDefault()
             .endRecord();
+
+    public static final Schema nestedMessageSchema2 = SchemaBuilder
+            .record("NestedMessage").fields()
+            .optionalLong("timestamp")
+            .optionalInt("id")
+            .name("primitiveMsg").type().array().items(primitiveMessageSchema)
+            .noDefault()
+            .endRecord();
+
+
 }
