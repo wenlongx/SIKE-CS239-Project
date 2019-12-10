@@ -13,8 +13,10 @@ We are testing the performance of different serialization methods as they apply 
 Before running any example, open up 2 terminals (or tmux) and run the following commands to start the Kafka server and Zookeeper
 
 ``` shell script
-$ bin/zookeeper-server-start.sh config/zookeeper.properties
-$ bin/kafka-server-start.sh config/server.properties
+$ cd confluent-kafka
+$ bin/zookeeper-server-start ./etc/kafka/zookeeper.properties
+$ bin/kafka-server-start ./etc/kafka/server.properties
+$ bin/schema-registry-start ./etc/schema-registry/schema-registry.properties
 ```
 
 # TODO List
