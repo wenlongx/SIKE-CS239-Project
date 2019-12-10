@@ -49,6 +49,7 @@ public class ConsumerThread extends ShutdownableThread {
     private final int iterations;
     private int currIteration;
     private String metricsFilename;
+    private StringBuffer metricsBuffer = new StringBuffer("");
 
     private List<String> consumerMetricsToRecord = Arrays.asList(
             "records-consumed-rate",
@@ -162,7 +163,7 @@ public class ConsumerThread extends ShutdownableThread {
         try {
             consumer.subscribe(Collections.singletonList(this.topic));
             Map<MetricName, Metric> metricMap = null;
-            ArrayList<HashMap<String, String>> allMetrics = new ArrayList<HashMap<String, String>>();
+            HashMap<String, String> metrics = null;
 
             switch (this.serializerType) {
                 case PB1:
@@ -171,9 +172,10 @@ public class ConsumerThread extends ShutdownableThread {
                     ConsumerRecords<Integer, MessageLite> records = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, MessageLite> record : records) {
                         this.currIteration++;
-                        metricMap = consumer.metrics();
-                        HashMap<String, String> metrics = this.metricsFromRecord(metricMap);
-                        allMetrics.add(metrics);
+                        if (currIteration % Utilities.METRICS_INTERVAL == 0) {
+                            metricMap = consumer.metrics();
+                            metrics = this.metricsFromRecord(metricMap);
+                        }
                     }
                     break;
                 case AVRO_SCHEMAREG1:
@@ -185,9 +187,10 @@ public class ConsumerThread extends ShutdownableThread {
                     ConsumerRecords<Integer, GenericRecord> avroRecords = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, GenericRecord> record : avroRecords) {
                         this.currIteration++;
-                        metricMap = consumer.metrics();
-                        HashMap<String, String> metrics = this.metricsFromRecord(metricMap);
-                        allMetrics.add(metrics);
+                        if (currIteration % Utilities.METRICS_INTERVAL == 0) {
+                            metricMap = consumer.metrics();
+                            metrics = this.metricsFromRecord(metricMap);
+                        }
                     }
                     break;
                 case CAPNPROTO1:
@@ -196,9 +199,10 @@ public class ConsumerThread extends ShutdownableThread {
                     ConsumerRecords<Integer, MessageReader> capnprotoRecords = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, MessageReader> record : capnprotoRecords) {
                         this.currIteration++;
-                        metricMap = consumer.metrics();
-                        HashMap<String, String> metrics = this.metricsFromRecord(metricMap);
-                        allMetrics.add(metrics);
+                        if (currIteration % Utilities.METRICS_INTERVAL == 0) {
+                            metricMap = consumer.metrics();
+                            metrics = this.metricsFromRecord(metricMap);
+                        }
                     }
                     break;
                 case THRIFT1:
@@ -207,20 +211,27 @@ public class ConsumerThread extends ShutdownableThread {
                     ConsumerRecords<Integer, TBase> thriftRecords = consumer.poll(Duration.ofSeconds(10));
                     for (ConsumerRecord<Integer, TBase> record : thriftRecords) {
                         this.currIteration++;
-                        metricMap = consumer.metrics();
-                        HashMap<String, String> metrics = this.metricsFromRecord(metricMap);
-                        allMetrics.add(metrics);
+                        if (currIteration % Utilities.METRICS_INTERVAL == 0) {
+                            metricMap = consumer.metrics();
+                            metrics = this.metricsFromRecord(metricMap);
+                        }
                     }
                     break;
             }
 
-            // Write the per-record metrics to a file
-            for (HashMap<String, String> recordMetrics : allMetrics) {
+            if (metrics != null) {
                 // This converts the map into a json object
-                String result = "{" + recordMetrics.entrySet().stream()
+                String result = "{" + metrics.entrySet().stream()
                         .map(e -> "\"" + e.getKey() + "\":" + e.getValue())
-                        .collect(Collectors.joining(",")) + "}";
-                Utilities.appendStringToFile(this.metricsFilename, result);
+                        .collect(Collectors.joining(",")) + "}\n";
+                // Write to a buffer
+                metricsBuffer.append(result);
+
+                // Clear the buffer if its too large
+                if (metricsBuffer.length() > Utilities.METRICS_BUFFER_SIZE) {
+                    Utilities.appendStringToFile(this.metricsFilename, metricsBuffer.toString());
+                    metricsBuffer.delete(0, metricsBuffer.length());
+                }
             }
         } catch (WakeupException e) {
             // Ignore for shutdown
@@ -231,6 +242,10 @@ public class ConsumerThread extends ShutdownableThread {
             // Close the consumer and shutdown the thread
             if (this.currIteration >= this.iterations) {
                 System.out.println("Closing the consumer ...");
+                // Write out the rest of the buffer
+                if (metricsBuffer.length() > 0) {
+                    Utilities.appendStringToFile(this.metricsFilename, metricsBuffer.toString());
+                }
                 consumer.close();
                 this.shutdown();
             }

@@ -57,6 +57,7 @@ public class ProducerThread extends Thread {
     private final SerializerType serializerType;
     private final int iterations;
     private String metricsFilename;
+    private MetricsCounter metricsCounter;
 
     private List<String> producerMetricsToRecord = Arrays.asList(
             "batch-size-avg",
@@ -78,6 +79,8 @@ public class ProducerThread extends Thread {
         if (producermetrics.exists()) {
             producermetrics.delete();
         }
+
+        this.metricsCounter = new MetricsCounter(this.metricsFilename, this.producerMetricsToRecord);
 
         // The key is the Partition Name, and for our experiments will be an integer.
         switch (serializerType) {
@@ -157,7 +160,12 @@ public class ProducerThread extends Thread {
                         builder.setTimestamp(startTime);
                         builder.setResultPerPage(i);
                         PbClasses.PrimitiveMessage primitiveMessage = builder.build();
-                        producer.send(new ProducerRecord<>(this.topic, 5, primitiveMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
+
+                        producer.send(new ProducerRecord<>(this.topic, 5, primitiveMessage), new DemoCallBack(producer, this.metricsCounter, startTime, i));
+                        // Flush metrics counter if too large
+                        if (this.metricsCounter.getBufSize() > Utilities.METRICS_BUFFER_SIZE) {
+                            this.metricsCounter.flush();
+                        }
                     }
                     break;
                 case PB2:
@@ -170,7 +178,11 @@ public class ProducerThread extends Thread {
                         builder.putAllStorage(stringIntegerMap);
                         PbClasses.ComplexMessage complexMessage = builder.build();
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, complexMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, complexMessage), new DemoCallBack(producer, this.metricsCounter, startTime, i));
+                        // Flush metrics counter if too large
+                        if (this.metricsCounter.getBufSize() > Utilities.METRICS_BUFFER_SIZE) {
+                            this.metricsCounter.flush();
+                        }
                     }
                     break;
                 case PB3:
@@ -183,7 +195,11 @@ public class ProducerThread extends Thread {
                         builder.setPrimitiveMsg(PbClasses.PrimitiveMessage.newBuilder().setQuery("hello there").setPageNumber(12321).setResultPerPage(i).build());
                         PbClasses.NestedMessage nestedMessage = builder.build();
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, nestedMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, nestedMessage), new DemoCallBack(producer, this.metricsCounter, startTime, i));
+                        // Flush metrics counter if too large
+                        if (this.metricsCounter.getBufSize() > Utilities.METRICS_BUFFER_SIZE) {
+                            this.metricsCounter.flush();
+                        }
                     }
                     break;
 
@@ -200,7 +216,11 @@ public class ProducerThread extends Thread {
                         record.put("timestamp", startTime);
                         record.put("result_per_page", i);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(producer, this.metricsCounter, startTime, i));
+                        // Flush metrics counter if too large
+                        if (this.metricsCounter.getBufSize() > Utilities.METRICS_BUFFER_SIZE) {
+                            this.metricsCounter.flush();
+                        }
                     }
                     break;
                 case AVRO_SCHEMAREG2:
@@ -213,7 +233,11 @@ public class ProducerThread extends Thread {
                         record.put("arr", integerArrayList);
                         record.put("storage", stringIntegerMap);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(producer, this.metricsCounter, startTime, i));
+                        // Flush metrics counter if too large
+                        if (this.metricsCounter.getBufSize() > Utilities.METRICS_BUFFER_SIZE) {
+                            this.metricsCounter.flush();
+                        }
                     }
                     break;
                 case AVRO_SCHEMAREG3:
@@ -235,7 +259,11 @@ public class ProducerThread extends Thread {
                         record.put("id", i);
                         record.put("primitiveMsg", primitiveMessage);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(producer, this.metricsCounter, startTime, i));
+                        // Flush metrics counter if too large
+                        if (this.metricsCounter.getBufSize() > Utilities.METRICS_BUFFER_SIZE) {
+                            this.metricsCounter.flush();
+                        }
                     }
                     break;
 
@@ -251,7 +279,11 @@ public class ProducerThread extends Thread {
                         primitiveMessage.setPageNumber(12321);
                         primitiveMessage.setResultPerPage(i);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(producer, this.metricsCounter, startTime, i));
+                        // Flush metrics counter if too large
+                        if (this.metricsCounter.getBufSize() > Utilities.METRICS_BUFFER_SIZE) {
+                            this.metricsCounter.flush();
+                        }
                     }
                     break;
                 case CAPNPROTO2:
@@ -272,7 +304,11 @@ public class ProducerThread extends Thread {
                             localStringIntegerMap.get(j).setValue(j);
                         }
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(producer, this.metricsCounter, startTime, i));
+                        // Flush metrics counter if too large
+                        if (this.metricsCounter.getBufSize() > Utilities.METRICS_BUFFER_SIZE) {
+                            this.metricsCounter.flush();
+                        }
                     }
                     break;
                 case CAPNPROTO3:
@@ -289,7 +325,11 @@ public class ProducerThread extends Thread {
                         primitiveMessage.setPageNumber(12321);
                         primitiveMessage.setResultPerPage(i);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(producer, this.metricsCounter, startTime, i));
+                        // Flush metrics counter if too large
+                        if (this.metricsCounter.getBufSize() > Utilities.METRICS_BUFFER_SIZE) {
+                            this.metricsCounter.flush();
+                        }
                     }
                     break;
 
@@ -304,7 +344,11 @@ public class ProducerThread extends Thread {
                         primitiveMessage.setPageNumber(12321);
                         primitiveMessage.setResultPerPage(i);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, primitiveMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, primitiveMessage), new DemoCallBack(producer, this.metricsCounter, startTime, i));
+                        // Flush metrics counter if too large
+                        if (this.metricsCounter.getBufSize() > Utilities.METRICS_BUFFER_SIZE) {
+                            this.metricsCounter.flush();
+                        }
                     }
                     break;
                 case THRIFT2:
@@ -315,7 +359,11 @@ public class ProducerThread extends Thread {
                         complexMessage.setArr(integerArrayList);
                         complexMessage.setStorage(stringIntegerMap);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, complexMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, complexMessage), new DemoCallBack(producer, this.metricsCounter, startTime, i));
+                        // Flush metrics counter if too large
+                        if (this.metricsCounter.getBufSize() > Utilities.METRICS_BUFFER_SIZE) {
+                            this.metricsCounter.flush();
+                        }
                     }
                     break;
                 case THRIFT3:
@@ -333,11 +381,14 @@ public class ProducerThread extends Thread {
                         nestedMessage.setId(i);
                         nestedMessage.setPrimitiveMsg(primitiveMessage);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, nestedMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, nestedMessage), new DemoCallBack(producer, this.metricsCounter, startTime, i));
+                        // Flush metrics counter if too large
+                        if (this.metricsCounter.getBufSize() > Utilities.METRICS_BUFFER_SIZE) {
+                            this.metricsCounter.flush();
+                        }
                     }
                     break;
             }
-
         } catch (SerializationException | IOException e) {
             System.out.println(e);
         } finally {
@@ -345,28 +396,54 @@ public class ProducerThread extends Thread {
 //            Kafka and then close the producer to free its resources.
             System.out.println("Closing the producer ...");
             producer.flush();
+            this.metricsCounter.flush();
             producer.close();
         }
     }
 }
 
-class DemoCallBack implements Callback {
-
-    private final long startTime;
-    private final int messageNumber;
-    Producer producer;
+class MetricsCounter {
+    private int counter;
+    private String metricsFilename;
+    private StringBuffer metricsBuffer;
     List<String> producerMetricsToRecord;
-    String metricsFilename;
 
-    public DemoCallBack(Producer producer, List<String> producerMetricsToRecord, String metricsFilename, long startTime, int messageNumber) {
-        this.startTime = startTime;
-        this.messageNumber = messageNumber;
-        this.producer = producer;
-        this.producerMetricsToRecord = producerMetricsToRecord;
+    public MetricsCounter(String metricsFilename, List<String> producerMetricsToRecord) {
+        this.counter = 0;
         this.metricsFilename = metricsFilename;
+        this.metricsBuffer = new StringBuffer("");
+        this.producerMetricsToRecord = producerMetricsToRecord;
     }
 
-    public HashMap<String, String> metricsFromProducer(Map<MetricName, Metric> metricMap) {
+    @SuppressWarnings("unchecked")
+    public void increment(Producer producer) {
+        this.counter += 1;
+        // Append producer metrics every set interval
+        if (this.counter % Utilities.METRICS_INTERVAL == 0) {
+            this.appendMetrics(producer.metrics());
+        }
+    }
+
+    public int getBufSize() {
+        return metricsBuffer.length();
+    }
+
+    // Flushes the internal metricsBuffer
+    public void flush() {
+        Utilities.appendStringToFile(this.metricsFilename, metricsBuffer.toString());
+        metricsBuffer.delete(0, metricsBuffer.length());
+    }
+
+    private void appendMetrics(Map<MetricName, Metric> metricMap) {
+        HashMap<String, String> metrics = metricsFromProducer(metricMap);
+        // This converts the map into a json object
+        String result = "{" + metrics.entrySet().stream()
+                .map(e -> "\"" + e.getKey() + "\":" + e.getValue())
+                .collect(Collectors.joining(",")) + "}\n";
+        this.metricsBuffer.append(result);
+    }
+
+    private HashMap<String, String> metricsFromProducer(Map<MetricName, Metric> metricMap) {
         HashMap<String, String> metrics = new HashMap<String, String>();
         // Loop through all the metrics we record (can't just look it up bc it looks it up by an object reference)
         for (MetricName m_name : metricMap.keySet()) {
@@ -395,6 +472,21 @@ class DemoCallBack implements Callback {
 
         return metrics;
     }
+}
+
+class DemoCallBack implements Callback {
+
+    private final long startTime;
+    private final int messageNumber;
+    Producer producer;
+    MetricsCounter metricsCounter;
+
+    public DemoCallBack(Producer producer, MetricsCounter metricsCounter, long startTime, int messageNumber) {
+        this.startTime = startTime;
+        this.messageNumber = messageNumber;
+        this.producer = producer;
+        this.metricsCounter = metricsCounter;
+    }
 
     /**
      * A callback method the user can implement to provide asynchronous handling of request completion. This method will
@@ -406,18 +498,10 @@ class DemoCallBack implements Callback {
      *                  occurred.
      * @param exception The exception thrown during processing of this record. Null if no error occurred.
      */
-    @SuppressWarnings("unchecked")
     public void onCompletion(RecordMetadata metadata, Exception exception) {
         long elapsedTime = System.nanoTime() - startTime;
 
-        // Write producer metrics
-        Map<MetricName, Metric> metricMap = this.producer.metrics();
-        HashMap<String, String> metrics = this.metricsFromProducer(metricMap);
-        // This converts the map into a json object
-        String result = "{" + metrics.entrySet().stream()
-                .map(e -> "\"" + e.getKey() + "\":" + e.getValue())
-                .collect(Collectors.joining(",")) + "}";
-        Utilities.appendStringToFile(this.metricsFilename, result);
+        this.metricsCounter.increment(this.producer);
 
         if (metadata != null) {
 //            System.out.println("Message " + messageNumber + " was sent and it took " + elapsedTime + " ns.");
