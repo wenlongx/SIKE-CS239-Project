@@ -1281,3 +1281,121 @@ Caused by: org.apache.kafka.common.errors.NotLeaderForPartitionException: This s
 [2019-12-07 06:44:41,902] INFO Wait to catch up until the offset of the last message at 7 (io.confluent.kafka.schemaregistry.storage.KafkaStore)
 [2019-12-07 06:44:41,929] INFO 127.0.0.1 - - [07/Dec/2019:14:44:41 +0000] "POST /subjects/test-value/versions HTTP/1.1" 409 93  32 (io.confluent.rest-utils.requests)
 [2019-12-07 06:47:14,542] INFO 127.0.0.1 - - [07/Dec/2019:14:47:14 +0000] "POST /subjects/test-value/versions HTTP/1.1" 200 8  5 (io.confluent.rest-utils.requests)
+[2019-12-07 06:52:18,304] INFO Stopped NetworkTrafficServerConnector@68be8808{HTTP/1.1,[http/1.1]}{0.0.0.0:8081} (org.eclipse.jetty.server.AbstractConnector)
+[2019-12-07 06:52:18,305] INFO node0 Stopped scavenging (org.eclipse.jetty.server.session)
+[2019-12-07 06:52:18,307] INFO Stopped o.e.j.s.ServletContextHandler@34f7234e{/ws,null,UNAVAILABLE} (org.eclipse.jetty.server.handler.ContextHandler)
+[2019-12-07 06:52:18,326] INFO Stopped o.e.j.s.ServletContextHandler@753432a2{/,null,UNAVAILABLE} (org.eclipse.jetty.server.handler.ContextHandler)
+[2019-12-07 06:52:18,332] INFO Shutting down schema registry (io.confluent.kafka.schemaregistry.storage.KafkaSchemaRegistry)
+[2019-12-07 06:52:18,333] INFO [kafka-store-reader-thread-_schemas]: Shutting down (io.confluent.kafka.schemaregistry.storage.KafkaStoreReaderThread)
+[2019-12-07 06:52:18,334] INFO [kafka-store-reader-thread-_schemas]: Shutdown completed (io.confluent.kafka.schemaregistry.storage.KafkaStoreReaderThread)
+[2019-12-07 06:52:18,334] INFO [kafka-store-reader-thread-_schemas]: Stopped (io.confluent.kafka.schemaregistry.storage.KafkaStoreReaderThread)
+[2019-12-07 06:52:18,336] INFO KafkaStoreReaderThread shutdown complete. (io.confluent.kafka.schemaregistry.storage.KafkaStoreReaderThread)
+[2019-12-09 17:14:22,147] INFO SchemaRegistryConfig values: 
+	access.control.allow.headers = 
+	access.control.allow.methods = 
+	access.control.allow.origin = 
+	authentication.method = NONE
+	authentication.realm = 
+	authentication.roles = [*]
+	authentication.skip.paths = []
+	avro.compatibility.level = backward
+	compression.enable = true
+	debug = false
+	host.name = kaushik-HP
+	idle.timeout.ms = 30000
+	inter.instance.headers.whitelist = []
+	inter.instance.protocol = http
+	kafkastore.bootstrap.servers = []
+	kafkastore.connection.url = localhost:2181
+	kafkastore.group.id = 
+	kafkastore.init.timeout.ms = 60000
+	kafkastore.sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	kafkastore.sasl.kerberos.min.time.before.relogin = 60000
+	kafkastore.sasl.kerberos.service.name = 
+	kafkastore.sasl.kerberos.ticket.renew.jitter = 0.05
+	kafkastore.sasl.kerberos.ticket.renew.window.factor = 0.8
+	kafkastore.sasl.mechanism = GSSAPI
+	kafkastore.security.protocol = PLAINTEXT
+	kafkastore.ssl.cipher.suites = 
+	kafkastore.ssl.enabled.protocols = TLSv1.2,TLSv1.1,TLSv1
+	kafkastore.ssl.endpoint.identification.algorithm = 
+	kafkastore.ssl.key.password = [hidden]
+	kafkastore.ssl.keymanager.algorithm = SunX509
+	kafkastore.ssl.keystore.location = 
+	kafkastore.ssl.keystore.password = [hidden]
+	kafkastore.ssl.keystore.type = JKS
+	kafkastore.ssl.protocol = TLS
+	kafkastore.ssl.provider = 
+	kafkastore.ssl.trustmanager.algorithm = PKIX
+	kafkastore.ssl.truststore.location = 
+	kafkastore.ssl.truststore.password = [hidden]
+	kafkastore.ssl.truststore.type = JKS
+	kafkastore.timeout.ms = 500
+	kafkastore.topic = _schemas
+	kafkastore.topic.replication.factor = 3
+	kafkastore.zk.session.timeout.ms = 30000
+	listeners = [http://0.0.0.0:8081]
+	master.eligibility = true
+	metric.reporters = []
+	metrics.jmx.prefix = kafka.schema.registry
+	metrics.num.samples = 2
+	metrics.sample.window.ms = 30000
+	metrics.tag.map = []
+	mode.mutability = false
+	port = 8081
+	request.logger.name = io.confluent.rest-utils.requests
+	resource.extension.class = []
+	resource.extension.classes = []
+	resource.static.locations = []
+	response.mediatype.default = application/vnd.schemaregistry.v1+json
+	response.mediatype.preferred = [application/vnd.schemaregistry.v1+json, application/vnd.schemaregistry+json, application/json]
+	rest.servlet.initializor.classes = []
+	schema.registry.group.id = schema-registry
+	schema.registry.inter.instance.protocol = 
+	schema.registry.resource.extension.class = []
+	schema.registry.zk.namespace = schema_registry
+	shutdown.graceful.ms = 1000
+	ssl.cipher.suites = []
+	ssl.client.auth = false
+	ssl.client.authentication = NONE
+	ssl.enabled.protocols = []
+	ssl.endpoint.identification.algorithm = null
+	ssl.key.password = [hidden]
+	ssl.keymanager.algorithm = 
+	ssl.keystore.location = 
+	ssl.keystore.password = [hidden]
+	ssl.keystore.type = JKS
+	ssl.protocol = TLS
+	ssl.provider = 
+	ssl.trustmanager.algorithm = 
+	ssl.truststore.location = 
+	ssl.truststore.password = [hidden]
+	ssl.truststore.type = JKS
+	websocket.path.prefix = /ws
+	websocket.servlet.initializor.classes = []
+	zookeeper.set.acl = false
+ (io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig)
+[2019-12-09 17:14:22,416] INFO Logging initialized @2007ms to org.eclipse.jetty.util.log.Slf4jLog (org.eclipse.jetty.util.log)
+[2019-12-09 17:14:23,857] INFO Created schema registry namespace localhost:2181 /schema_registry (io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig)
+[2019-12-09 17:14:24,155] INFO Initializing KafkaStore with broker endpoints: PLAINTEXT://kaushik-HP:9092 (io.confluent.kafka.schemaregistry.storage.KafkaStore)
+[2019-12-09 17:14:24,420] INFO Creating schemas topic _schemas (io.confluent.kafka.schemaregistry.storage.KafkaStore)
+[2019-12-09 17:14:24,422] WARN Creating the schema topic _schemas using a replication factor of 1, which is less than the desired one of 3. If this is a production environment, it's crucial to add more brokers and increase the replication factor of the topic. (io.confluent.kafka.schemaregistry.storage.KafkaStore)
+[2019-12-09 17:14:24,771] INFO Kafka store reader thread starting consumer (io.confluent.kafka.schemaregistry.storage.KafkaStoreReaderThread)
+[2019-12-09 17:14:24,825] INFO Initialized last consumed offset to -1 (io.confluent.kafka.schemaregistry.storage.KafkaStoreReaderThread)
+[2019-12-09 17:14:24,826] INFO [kafka-store-reader-thread-_schemas]: Starting (io.confluent.kafka.schemaregistry.storage.KafkaStoreReaderThread)
+[2019-12-09 17:14:25,009] INFO Wait to catch up until the offset of the last message at 0 (io.confluent.kafka.schemaregistry.storage.KafkaStore)
+[2019-12-09 17:14:25,065] INFO Joining schema registry with Zookeeper-based coordination (io.confluent.kafka.schemaregistry.storage.KafkaSchemaRegistry)
+[2019-12-09 17:14:25,108] INFO Successfully elected the new master: {"host":"kaushik-HP","port":8081,"master_eligibility":true,"scheme":"http","version":1} (io.confluent.kafka.schemaregistry.masterelector.zookeeper.ZookeeperMasterElector)
+[2019-12-09 17:14:25,128] INFO Wait to catch up until the offset of the last message at 1 (io.confluent.kafka.schemaregistry.storage.KafkaStore)
+[2019-12-09 17:14:25,140] INFO Successfully elected the new master: {"host":"kaushik-HP","port":8081,"master_eligibility":true,"scheme":"http","version":1} (io.confluent.kafka.schemaregistry.masterelector.zookeeper.ZookeeperMasterElector)
+[2019-12-09 17:14:25,390] INFO Adding listener: http://0.0.0.0:8081 (io.confluent.rest.Application)
+[2019-12-09 17:14:26,076] INFO jetty-9.4.18.v20190429; built: 2019-04-29T20:42:08.989Z; git: e1bc35120a6617ee3df052294e433f3a25ce7097; jvm 1.8.0_222-8u222-b10-1ubuntu1~16.04.1-b10 (org.eclipse.jetty.server.Server)
+[2019-12-09 17:14:26,126] INFO DefaultSessionIdManager workerName=node0 (org.eclipse.jetty.server.session)
+[2019-12-09 17:14:26,127] INFO No SessionScavenger set, using defaults (org.eclipse.jetty.server.session)
+[2019-12-09 17:14:26,128] INFO node0 Scavenging every 600000ms (org.eclipse.jetty.server.session)
+[2019-12-09 17:14:27,165] INFO HV000001: Hibernate Validator 5.1.3.Final (org.hibernate.validator.internal.util.Version)
+[2019-12-09 17:14:27,324] INFO Started o.e.j.s.ServletContextHandler@708400f6{/,null,AVAILABLE} (org.eclipse.jetty.server.handler.ContextHandler)
+[2019-12-09 17:14:27,336] INFO Started o.e.j.s.ServletContextHandler@4cf8b2dc{/ws,null,AVAILABLE} (org.eclipse.jetty.server.handler.ContextHandler)
+[2019-12-09 17:14:27,406] INFO Started NetworkTrafficServerConnector@305a0c5f{HTTP/1.1,[http/1.1]}{0.0.0.0:8081} (org.eclipse.jetty.server.AbstractConnector)
+[2019-12-09 17:14:27,409] INFO Started @7005ms (org.eclipse.jetty.server.Server)
+[2019-12-09 17:14:27,411] INFO Server started, listening for requests... (io.confluent.kafka.schemaregistry.rest.SchemaRegistryMain)

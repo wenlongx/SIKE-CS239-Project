@@ -10,7 +10,7 @@ We are testing the performance of different serialization methods as they apply 
 
 # Starting Kafka and Zookeeper
 
-Before running any example, open up 2 terminals (or tmux) and run the following commands to start the Kafka server and Zookeeper
+Before running any example, open up 3 terminals (or tmux) and run the following commands to start the Kafka server, Zookeeper, and Schema Registry
 
 ``` shell script
 $ cd confluent-kafka
