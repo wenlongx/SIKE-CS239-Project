@@ -19,6 +19,12 @@ $ bin/kafka-server-start ./etc/kafka/server.properties
 $ bin/schema-registry-start ./etc/schema-registry/schema-registry.properties
 ```
 
+To start just Kafka server and Zookeeper, run the following
+``` shell script
+$ bin/zookeeper-server-start.sh config/zookeeper.properties
+$ bin/kafka-server-start.sh config/server.properties
+```
+
 # TODO List
 1. Add dependencies to gradle as needed
 2. Modularize project for different serializers
