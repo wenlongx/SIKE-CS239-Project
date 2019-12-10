@@ -59,3 +59,5 @@ streams/src/generated
 clients/src/generated-test
 
 examples/src/main/java/kafka/protobuf_serde/generated/
+*.csv
+*.txt

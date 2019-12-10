@@ -19,4 +19,16 @@ public final class Utilities {
             e.printStackTrace();
         }
     }
+
+    public static void appendStringToFile(String fileName, String writeBuffer) {
+        try {
+            Writer writer = new BufferedWriter(new FileWriter(fileName, true));
+            writer.write(writeBuffer + "\n");
+            writer.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

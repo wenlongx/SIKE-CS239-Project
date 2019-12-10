@@ -19,6 +19,7 @@ package kafka.examples;
 
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
+import kafka.Utilities;
 import kafka.avro_serde.AvroSchemas;
 import kafka.avro_serde.CustomAvroSerializer;
 import kafka.capnproto_serde.CustomCapnProtoSerializer;
@@ -33,6 +34,8 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.producer.*;
+import org.apache.kafka.common.Metric;
+import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.capnproto.MessageBuilder;
@@ -40,23 +43,41 @@ import org.capnproto.PrimitiveList;
 import org.capnproto.StructList;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ProducerThread extends Thread {
     private Producer producer;
     private final String topic;
     private final SerializerType serializerType;
     private final int iterations;
+    private String metricsFilename;
+
+    private List<String> producerMetricsToRecord = Arrays.asList(
+            "batch-size-avg",
+            "record-send-rate",
+            "record-size-avg",
+            "request-latency-avg",
+            "request-latency-max"
+    );
 
     @SuppressWarnings("unchecked")
     public ProducerThread(String topic, SerializerType serializerType, int iterations) {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaProperties.KAFKA_SERVER_URL + ":" + KafkaProperties.KAFKA_SERVER_PORT);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "DemoProducer");
+
+        // Clear previous results
+        this.metricsFilename = serializerType.toString() + "_" + iterations + "_producermetrics.txt";
+        File producermetrics = new File(this.metricsFilename);
+        if (producermetrics.exists()) {
+            producermetrics.delete();
+        }
 
         // The key is the Partition Name, and for our experiments will be an integer.
         switch (serializerType) {
@@ -136,7 +157,7 @@ public class ProducerThread extends Thread {
                         builder.setTimestamp(startTime);
                         builder.setResultPerPage(i);
                         PbClasses.PrimitiveMessage primitiveMessage = builder.build();
-                        producer.send(new ProducerRecord<>(this.topic, 5, primitiveMessage), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, primitiveMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
                     }
                     break;
                 case PB2:
@@ -149,7 +170,7 @@ public class ProducerThread extends Thread {
                         builder.putAllStorage(stringIntegerMap);
                         PbClasses.ComplexMessage complexMessage = builder.build();
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, complexMessage), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, complexMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
                     }
                     break;
                 case PB3:
@@ -162,7 +183,7 @@ public class ProducerThread extends Thread {
                         builder.setPrimitiveMsg(PbClasses.PrimitiveMessage.newBuilder().setQuery("hello there").setPageNumber(12321).setResultPerPage(i).build());
                         PbClasses.NestedMessage nestedMessage = builder.build();
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, nestedMessage), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, nestedMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
                     }
                     break;
 
@@ -179,7 +200,7 @@ public class ProducerThread extends Thread {
                         record.put("timestamp", startTime);
                         record.put("result_per_page", i);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
                     }
                     break;
                 case AVRO_SCHEMAREG2:
@@ -192,7 +213,7 @@ public class ProducerThread extends Thread {
                         record.put("arr", integerArrayList);
                         record.put("storage", stringIntegerMap);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
                     }
                     break;
                 case AVRO_SCHEMAREG3:
@@ -214,7 +235,7 @@ public class ProducerThread extends Thread {
                         record.put("id", i);
                         record.put("primitiveMsg", primitiveMessage);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, record), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
                     }
                     break;
 
@@ -230,7 +251,7 @@ public class ProducerThread extends Thread {
                         primitiveMessage.setPageNumber(12321);
                         primitiveMessage.setResultPerPage(i);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
                     }
                     break;
                 case CAPNPROTO2:
@@ -251,7 +272,7 @@ public class ProducerThread extends Thread {
                             localStringIntegerMap.get(j).setValue(j);
                         }
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
                     }
                     break;
                 case CAPNPROTO3:
@@ -268,7 +289,7 @@ public class ProducerThread extends Thread {
                         primitiveMessage.setPageNumber(12321);
                         primitiveMessage.setResultPerPage(i);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, message), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
                     }
                     break;
 
@@ -283,7 +304,7 @@ public class ProducerThread extends Thread {
                         primitiveMessage.setPageNumber(12321);
                         primitiveMessage.setResultPerPage(i);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, primitiveMessage), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, primitiveMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
                     }
                     break;
                 case THRIFT2:
@@ -294,7 +315,7 @@ public class ProducerThread extends Thread {
                         complexMessage.setArr(integerArrayList);
                         complexMessage.setStorage(stringIntegerMap);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, complexMessage), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, complexMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
                     }
                     break;
                 case THRIFT3:
@@ -312,7 +333,7 @@ public class ProducerThread extends Thread {
                         nestedMessage.setId(i);
                         nestedMessage.setPrimitiveMsg(primitiveMessage);
 
-                        producer.send(new ProducerRecord<>(this.topic, 5, nestedMessage), new DemoCallBack(startTime, i));
+                        producer.send(new ProducerRecord<>(this.topic, 5, nestedMessage), new DemoCallBack(producer, this.producerMetricsToRecord, this.metricsFilename, startTime, i));
                     }
                     break;
             }
@@ -333,10 +354,46 @@ class DemoCallBack implements Callback {
 
     private final long startTime;
     private final int messageNumber;
+    Producer producer;
+    List<String> producerMetricsToRecord;
+    String metricsFilename;
 
-    public DemoCallBack(long startTime, int messageNumber) {
+    public DemoCallBack(Producer producer, List<String> producerMetricsToRecord, String metricsFilename, long startTime, int messageNumber) {
         this.startTime = startTime;
         this.messageNumber = messageNumber;
+        this.producer = producer;
+        this.producerMetricsToRecord = producerMetricsToRecord;
+        this.metricsFilename = metricsFilename;
+    }
+
+    public HashMap<String, String> metricsFromProducer(Map<MetricName, Metric> metricMap) {
+        HashMap<String, String> metrics = new HashMap<String, String>();
+        // Loop through all the metrics we record (can't just look it up bc it looks it up by an object reference)
+        for (MetricName m_name : metricMap.keySet()) {
+            Metric m = metricMap.get(m_name);
+
+            if (this.producerMetricsToRecord.contains(m.metricName().name())) {
+                // batch-size-avg
+                if ((m.metricName().name().equals("batch-size-avg")) ||
+                        // record-send-rate
+                        (m.metricName().name().equals("record-send-rate") && m.metricName().group().equals("producer-metrics")) ||
+                        // record-size-avg
+                        (m.metricName().name().equals("record-size-avg")) ||
+                        // request-latency-avg
+                        (m.metricName().name().equals("request-latency-avg") && m.metricName().group().equals("producer-metrics")) ||
+                        // request-latency-max
+                        (m.metricName().name().equals("request-latency-max") && m.metricName().group().equals("producer-metrics"))
+
+                ) {
+                    metrics.put(m.metricName().name().toString(), m.metricValue().toString());
+                }
+                else {
+                    // do nothing
+                }
+            }
+        }
+
+        return metrics;
     }
 
     /**
@@ -349,10 +406,21 @@ class DemoCallBack implements Callback {
      *                  occurred.
      * @param exception The exception thrown during processing of this record. Null if no error occurred.
      */
+    @SuppressWarnings("unchecked")
     public void onCompletion(RecordMetadata metadata, Exception exception) {
         long elapsedTime = System.nanoTime() - startTime;
+
+        // Write producer metrics
+        Map<MetricName, Metric> metricMap = this.producer.metrics();
+        HashMap<String, String> metrics = this.metricsFromProducer(metricMap);
+        // This converts the map into a json object
+        String result = "{" + metrics.entrySet().stream()
+                .map(e -> "\"" + e.getKey() + "\":" + e.getValue())
+                .collect(Collectors.joining(",")) + "}";
+        Utilities.appendStringToFile(this.metricsFilename, result);
+
         if (metadata != null) {
-            System.out.println("Message " + messageNumber + " was sent and it took " + elapsedTime + " ns.");
+//            System.out.println("Message " + messageNumber + " was sent and it took " + elapsedTime + " ns.");
         } else {
             exception.printStackTrace();
         }
