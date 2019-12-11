@@ -30,7 +30,6 @@ import kafka.thrift_serde.CustomThriftSerializer;
 import kafka.thrift_serde.generated.ComplexMessage;
 import kafka.thrift_serde.generated.NestedMessage;
 import kafka.thrift_serde.generated.PrimitiveMessage;
-import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.producer.*;
@@ -145,7 +144,6 @@ public class ProducerThread extends Thread {
             //10MB character query
             BufferedReader br = Files.newBufferedReader(Paths.get("./examples/src/main/java/kafka/examples/query.txt"), StandardCharsets.UTF_8);
             String longQuery = br.readLine();
-//            String longQuery = "Hello There";
             switch (this.serializerType) {
 
                 /////////////////////////////////////// PB CODE BELOW ////////////////////////////////////////
@@ -192,7 +190,7 @@ public class ProducerThread extends Thread {
                         PbClasses.NestedMessage.Builder builder = PbClasses.NestedMessage.newBuilder();
                         builder.setTimestamp(startTime);
                         builder.setId(i);
-                        builder.setPrimitiveMsg(PbClasses.PrimitiveMessage.newBuilder().setQuery("hello there").setPageNumber(12321).setResultPerPage(i).build());
+                        builder.setPrimitiveMsg(PbClasses.PrimitiveMessage.newBuilder().setQuery(longQuery).setPageNumber(12321).setResultPerPage(i).build());
                         PbClasses.NestedMessage nestedMessage = builder.build();
 
                         producer.send(new ProducerRecord<>(this.topic, 5, nestedMessage), new DemoCallBack(producer, this.metricsCounter, startTime, i));
@@ -248,7 +246,7 @@ public class ProducerThread extends Thread {
                                 .setTimestamp(startTime)
                                 .setId(i)
                                 .setPrimitiveMsg(kafka.PrimitiveMessage.newBuilder()
-                                        .setQuery("Hello there")
+                                        .setQuery(longQuery)
                                         .setPageNumber(12321)
                                         .setResultPerPage(i)
                                         .build())
@@ -262,18 +260,11 @@ public class ProducerThread extends Thread {
                         long startTime = System.nanoTime();
 
                         GenericRecord primitiveMessage = new GenericData.Record(AvroSchemas.primitiveMessageSchema);
-                        primitiveMessage.put("query", "hello there");
+                        primitiveMessage.put("query", longQuery);
                         primitiveMessage.put("page_number", 12321);
                         primitiveMessage.put("result_per_page", i);
 
-//                        String str_schema = "{\\r\\n  \\\"type\\\": \\\"record\\\",\\r\\n  \\\"name\\\": \\\"NestedMessage\\\",\\r\\n  \\\"fields\\\": [\\r\\n    {\\r\\n      \\\"name\\\": \\\"timestamp\\\",\\r\\n      \\\"type\\\": [\\r\\n        \\\"null\\\",\\r\\n        \\\"long\\\"\\r\\n      ],\\r\\n      \\\"default\\\": null\\r\\n    },\\r\\n    {\\r\\n      \\\"name\\\": \\\"id\\\",\\r\\n      \\\"type\\\": [\\r\\n        \\\"null\\\",\\r\\n        \\\"int\\\"\\r\\n      ],\\r\\n      \\\"default\\\": null\\r\\n    },\\r\\n    {\\r\\n      \\\"name\\\": \\\"primitiveMsg\\\",\\r\\n      \\\"type\\\": {\\r\\n        \\\"type\\\": \\\"record\\\",\\r\\n        \\\"name\\\": \\\"PrimitiveMessage\\\",\\r\\n        \\\"fields\\\": [\\r\\n          {\\r\\n            \\\"name\\\": \\\"timestamp\\\",\\r\\n            \\\"type\\\": [\\r\\n              \\\"null\\\",\\r\\n              \\\"long\\\"\\r\\n            ],\\r\\n            \\\"default\\\": null\\r\\n          },\\r\\n          {\\r\\n            \\\"name\\\": \\\"query\\\",\\r\\n            \\\"type\\\": [\\r\\n              \\\"null\\\",\\r\\n              \\\"string\\\"\\r\\n            ],\\r\\n            \\\"default\\\": null\\r\\n          },\\r\\n          {\\r\\n            \\\"name\\\": \\\"page_number\\\",\\r\\n            \\\"type\\\": [\\r\\n              \\\"null\\\",\\r\\n              \\\"int\\\"\\r\\n            ],\\r\\n            \\\"default\\\": null\\r\\n          },\\r\\n          {\\r\\n            \\\"name\\\": \\\"result_per_page\\\",\\r\\n            \\\"type\\\": [\\r\\n              \\\"null\\\",\\r\\n              \\\"int\\\"\\r\\n            ],\\r\\n            \\\"default\\\": null\\r\\n          }\\r\\n        ]\\r\\n      }\\r\\n    }\\r\\n  ]\\r\\n}";
-//                        String str_schema = "{\"type\":\"record\",\"name\":\"NestedMessage\",\"fields\":[{\"name\":\"timestamp\",\"type\":[\"null\",\"long\"],\"default\":null},{\"name\":\"id\",\"type\":[\"null\",\"int\"],\"default\":null},{\"name\":\"primitiveMsg\",\"type\":{\"type\":\"record\",\"name\":\"PrimitiveMessage\",\"fields\":[{\"name\":\"timestamp\",\"type\":[\"null\",\"long\"],\"default\":null},{\"name\":\"query\",\"type\":[\"null\",\"string\"],\"default\":null},{\"name\":\"page_number\",\"type\":[\"null\",\"int\"],\"default\":null},{\"name\":\"result_per_page\",\"type\":[\"null\",\"int\"],\"default\":null}]}}]}";
-//                        Schema.Parser parser = new Schema.Parser();
-//                        Schema schema = parser.parse(str_schema);
                         GenericRecord record = new GenericData.Record(AvroSchemas.nestedMessageSchema);
-//                        List<GenericRecord>  innerList = new ArrayList<>();
-//                        innerList.add(primitiveMessage);
-//                        GenericData.Array<GenericRecord> genericDataArray = new GenericData.Array<GenericRecord>(AvroSchemas.primitiveMessageSchema, innerList);
                         record.put("timestamp", startTime);
                         record.put("id", i);
                         record.put("primitiveMsg", primitiveMessage);
@@ -409,6 +400,7 @@ public class ProducerThread extends Thread {
                     break;
             }
         } catch (SerializationException | IOException e) {
+            e.printStackTrace();
             System.out.println(e);
         } finally {
 //            When you're finished producing records, you can flush the producer to ensure it has all been written to

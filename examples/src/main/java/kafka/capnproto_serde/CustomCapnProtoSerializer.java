@@ -44,6 +44,7 @@ public class CustomCapnProtoSerializer implements Serializer<MessageBuilder> {
             long startTime = System.nanoTime();
             write(os, data);
             byte[] arr = Arrays.copyOf(os.buf.array(), os.buf.position());
+//            System.out.println(arr.length);
             long endTime = System.nanoTime();
 
             this.serializedTimes[this.currCount] = endTime - startTime;

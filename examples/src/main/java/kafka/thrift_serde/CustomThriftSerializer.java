@@ -38,7 +38,7 @@ public class CustomThriftSerializer<T extends TBase> implements Serializer<T> {
         try {
             long startTime = System.nanoTime();
             byte [] arr = this.serializer.serialize(data);
-
+//            System.out.println(arr.length);
             long endTime = System.nanoTime();
             this.serializedTimes[this.currCount] = endTime - startTime;
             this.currCount++;

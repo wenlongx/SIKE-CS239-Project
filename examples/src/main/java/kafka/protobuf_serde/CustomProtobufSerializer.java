@@ -33,6 +33,7 @@ public class CustomProtobufSerializer<T extends MessageLite> implements Serializ
     public byte[] serialize(String topic, T data) {
         long startTime = System.nanoTime();
         byte[] arr = data.toByteArray();
+//        System.out.println(arr.length);
         long endTime = System.nanoTime();
         this.serializedTimes[this.currCount] = endTime - startTime;
         this.currCount++;

@@ -55,7 +55,7 @@ public class CustomAvroSerializer implements Serializer<GenericRecord> {
             e.printStackTrace();
         }
         byte[] arr = stream.toByteArray();
-
+//        System.out.println(arr.length);
         long endTime = System.nanoTime();
 
         this.serializedTimes[this.currCount] = endTime - startTime;
