@@ -1,6 +1,6 @@
-{"record-size-avg":120.0,"record-send-rate":34.54133635334089,"request-latency-max":10.0,"request-latency-avg":4.0588235294117645,"batch-size-avg":2056.2272727272725}
-{"record-size-avg":120.0,"record-send-rate":70.30391797876236,"request-latency-max":10.0,"request-latency-avg":2.7288135593220337,"batch-size-avg":1452.328125}
-{"record-size-avg":120.0,"record-send-rate":101.46373918829009,"request-latency-max":10.0,"request-latency-avg":2.2818181818181817,"batch-size-avg":1177.878260869565}
-{"record-size-avg":120.0,"record-send-rate":138.83440273945277,"request-latency-max":10.0,"request-latency-avg":2.3655172413793104,"batch-size-avg":1232.5733333333333}
-{"record-size-avg":120.0,"record-send-rate":167.10972286834584,"request-latency-max":10.0,"request-latency-avg":2.1709844559585494,"batch-size-avg":1134.9847715736041}
-{"record-size-avg":120.0,"record-send-rate":199.24949357420383,"request-latency-max":10.0,"request-latency-avg":1.9056603773584906,"batch-size-avg":1009.7105263157895}
+{"record-size-avg":100113.87250996016,"record-send-rate":31.071085940643083,"request-latency-max":92.0,"request-latency-avg":9.615615615615615,"batch-size-avg":100098.87250996016}
+{"record-size-avg":100113.93612774451,"record-send-rate":58.05498421159362,"request-latency-max":129.0,"request-latency-avg":10.29064532266133,"batch-size-avg":100098.93612774451}
+{"record-size-avg":100113.95739014648,"record-send-rate":81.46219763531838,"request-latency-max":160.0,"request-latency-avg":10.736912304101367,"batch-size-avg":100098.95739014648}
+{"record-size-avg":100113.96803196803,"record-send-rate":103.39039946290703,"request-latency-max":160.0,"request-latency-avg":10.340085021255314,"batch-size-avg":100098.96803196803}
+{"record-size-avg":100113.97442046362,"record-send-rate":124.6077991931869,"request-latency-max":160.0,"request-latency-avg":9.67733546709342,"batch-size-avg":100098.97442046362}
+{"record-size-avg":100113.97866666666,"record-send-rate":144.88204187091011,"request-latency-max":160.0,"request-latency-avg":9.09701616936156,"batch-size-avg":100098.97866666666}

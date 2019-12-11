@@ -1,6 +1,6 @@
-{"request-rate":0.36595914565174,"records-lag-max":646.0,"records-lag-avg":396.0,"records-consumed-rate":0.0,"outgoing-byte-rate":25.21791203672899}
-{"request-rate":0.39867109634551495,"records-lag-max":1552.0,"records-lag-avg":679.2,"records-consumed-rate":38.146594767325745,"outgoing-byte-rate":28.40531561461794}
-{"request-rate":0.3984196022444304,"records-lag-max":1552.0,"records-lag-avg":571.4285714285714,"records-consumed-rate":38.12248428196001,"outgoing-byte-rate":28.38739665991567}
-{"request-rate":0.43134912734753467,"records-lag-max":1726.0,"records-lag-avg":695.2,"records-consumed-rate":106.31648936170214,"outgoing-byte-rate":31.588028402680997}
-{"request-rate":0.43126326963906586,"records-lag-max":1726.0,"records-lag-avg":658.6666666666666,"records-consumed-rate":106.29528684437945,"outgoing-byte-rate":31.581740976645438}
-{"request-rate":0.4974959371165136,"records-lag-max":1726.0,"records-lag-avg":532.0,"records-consumed-rate":199.38191606021334,"outgoing-byte-rate":38.00868959570163}
+{"request-rate":7.473287628929652,"records-lag-max":46.0,"records-lag-avg":2.8296943231441047,"records-consumed-rate":31.17700189989722,"outgoing-byte-rate":717.0959174850226}
+{"request-rate":13.775377595517947,"records-lag-max":46.0,"records-lag-avg":2.2169197396963125,"records-consumed-rate":58.22246805042066,"outgoing-byte-rate":1330.4069079042365}
+{"request-rate":19.226095644425243,"records-lag-max":104.0,"records-lag-avg":2.9278499278499277,"records-consumed-rate":81.6171069456158,"outgoing-byte-rate":1860.9078389544459}
+{"request-rate":24.796580492326708,"records-lag-max":104.0,"records-lag-avg":3.746284501061571,"records-consumed-rate":103.7344398340249,"outgoing-byte-rate":2402.873622412195}
+{"request-rate":31.583651983910215,"records-lag-max":104.0,"records-lag-avg":2.831730769230769,"records-consumed-rate":125.00625031251563,"outgoing-byte-rate":3062.5962159209416}
+{"request-rate":37.809867629362216,"records-lag-max":104.0,"records-lag-avg":2.3997412677878396,"records-consumed-rate":145.36996656490768,"outgoing-byte-rate":3667.244283995187}
