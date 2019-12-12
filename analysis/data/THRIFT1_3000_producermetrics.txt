@@ -1,3 +1,3 @@
-{"record-size-avg":100109.93625498009,"record-send-rate":31.464477106772385,"request-latency-max":63.0,"request-latency-avg":8.002002002002001,"batch-size-avg":100094.93625498009}
-{"record-size-avg":100109.96806387225,"record-send-rate":60.113387527371984,"request-latency-max":76.0,"request-latency-avg":7.461230615307654,"batch-size-avg":100094.96806387225}
-{"record-size-avg":100109.97866666666,"record-send-rate":86.7779352636603,"request-latency-max":76.0,"request-latency-avg":6.987995998666222,"batch-size-avg":100094.97866666666}
+{"record-size-avg":100109.93619142572,"record-send-rate":27.581465695036435,"request-latency-max":178.0,"request-latency-avg":20.14914914914915,"buffer-available-bytes":17582.0,"byte-total":1.00395221E8,"batch-size-avg":100094.93619142572}
+{"record-size-avg":100109.96806387225,"record-send-rate":51.917098445595855,"request-latency-max":178.0,"request-latency-avg":15.425712856428214,"buffer-available-bytes":17582.0,"byte-total":2.00590316E8,"batch-size-avg":100094.96806387225}
+{"record-size-avg":100109.97866666666,"record-send-rate":73.80436921865774,"request-latency-max":178.0,"request-latency-avg":13.616538846282094,"buffer-available-bytes":3.3454322E7,"byte-total":3.00284936E8,"batch-size-avg":100094.97866666666}

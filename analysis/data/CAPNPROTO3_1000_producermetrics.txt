@@ -1,1 +1,1 @@
-{"record-size-avg":100179.0,"record-send-rate":31.37451761679164,"request-latency-max":64.0,"request-latency-avg":9.19119119119119,"batch-size-avg":100164.0}
+{"record-size-avg":100179.0,"record-send-rate":30.53528352010748,"request-latency-max":88.0,"request-latency-avg":13.51951951951952,"buffer-available-bytes":3.3454253E7,"byte-total":1.00164E8,"batch-size-avg":100164.0}

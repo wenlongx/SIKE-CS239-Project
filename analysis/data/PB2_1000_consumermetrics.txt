@@ -1,1 +1,1 @@
-{"request-rate":3.982286788365351,"records-lag-max":0.0,"records-lag-avg":0.0,"records-consumed-rate":31.96726552010741,"outgoing-byte-rate":377.32963777119375}
+{"request-rate":4.159355299928511,"bytes-consumed-total":1212000.0,"records-lag-max":0.0,"records-lag-avg":0.0,"incoming-byte-rate":40591.46004614435,"records-consumed-rate":32.60408855270451,"outgoing-byte-rate":393.4165204393319}
